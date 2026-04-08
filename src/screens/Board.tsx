@@ -71,7 +71,8 @@ export default function Board() {
             <img
               src="/Game_Show_Owl.webp"
               alt="Equity Feud Owl"
-              className="owl-idle w-24 h-24 object-contain"
+              className="owl-idle object-contain"
+              style={{ width: 220, height: 220, filter: 'drop-shadow(0 0 40px rgba(255,200,50,0.45)) drop-shadow(0 0 80px rgba(172,34,40,0.35))' }}
             />
           </div>
           <TeamScore
@@ -93,7 +94,8 @@ function TitleScreen({ config }: { config: { team1Name: string; team2Name: strin
         <img
           src="/Game_Show_Owl.webp"
           alt="Equity Feud Owl"
-          className="owl-idle w-48 h-48 object-contain"
+          className="owl-idle object-contain"
+          style={{ width: 420, height: 420, filter: 'drop-shadow(0 0 40px rgba(255,200,50,0.45)) drop-shadow(0 0 80px rgba(172,34,40,0.35))' }}
         />
         <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow">EQUITY FEUD</h1>
         <div className="flex gap-16 text-3xl font-bungee">
@@ -128,7 +130,8 @@ function FinalScreen({
         <img
           src="/Game_Show_Owl.webp"
           alt="Equity Feud Owl"
-          className="owl-idle w-40 h-40 object-contain"
+          className="owl-idle object-contain"
+          style={{ width: 420, height: 420, filter: 'drop-shadow(0 0 40px rgba(255,200,50,0.45)) drop-shadow(0 0 80px rgba(172,34,40,0.35))' }}
         />
         <h1 className="font-bungee text-6xl text-[var(--gold)] title-glow">FINAL SCORE</h1>
         <div className="flex gap-16 items-center">
