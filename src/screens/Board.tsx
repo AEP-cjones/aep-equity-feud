@@ -90,14 +90,14 @@ function TitleScreen({ config }: { config: { team1Name: string; team2Name: strin
   return (
     <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
-      <div className="flex-1 flex flex-col items-center pt-6 gap-3">
+      <div className="flex-1 flex flex-col items-center pt-6 gap-1">
         <img
           src="/Game_Show_Owl.webp"
           alt="Equity Feud Owl"
           className="owl-idle object-contain"
-          style={{ width: 550, height: 550, filter: 'drop-shadow(0 0 60px rgba(255,200,50,0.5)) drop-shadow(0 0 100px rgba(172,34,40,0.4))' }}
+          style={{ width: 480, height: 380, filter: 'drop-shadow(0 0 60px rgba(255,200,50,0.5)) drop-shadow(0 0 100px rgba(172,34,40,0.4))' }}
         />
-        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow -mt-2">EQUITY FEUD</h1>
+        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow -mt-4">EQUITY FEUD</h1>
         <p className="font-bungee text-xl tracking-widest text-white/30 tagline-pulse">SURVEY SAYS...</p>
         <div className="flex gap-10 text-5xl font-bungee items-center mt-2">
           <span className="text-blue-400 team-glow-blue">{config.team1Name}</span>
