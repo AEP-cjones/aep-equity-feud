@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { dbRef, onValue, set, update, get, remove, push } from '../firebase'
-import type { GameState, GameConfig, Rounds, Round, DEFAULT_GAME_STATE, DEFAULT_CONFIG } from '../types'
+import { dbRef, onValue, set, update, get, remove } from '../firebase'
+import type { GameState, GameConfig, Rounds, Round } from '../types'
 
 export function useGameState() {
   const [gameState, setGameState] = useState<GameState | null>(null)

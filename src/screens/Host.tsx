@@ -46,7 +46,7 @@ export default function Host() {
             {roundKeys.map((key) => (
               <button
                 key={key}
-                onClick={() => handleSelectRound(key, rounds[key], gameState)}
+                onClick={() => handleSelectRound(key, rounds[key])}
                 className={`px-4 py-2 rounded-lg font-bold transition-all ${
                   gameState.currentRound === key
                     ? 'bg-[var(--gold)] text-[var(--navy)]'
@@ -197,7 +197,7 @@ export default function Host() {
   )
 }
 
-async function handleSelectRound(roundId: string, round: Round, gameState: GameState) {
+async function handleSelectRound(roundId: string, round: Round) {
   await resetRoundAnswers(roundId, round.answers)
   await updateGameState({
     currentRound: roundId,
