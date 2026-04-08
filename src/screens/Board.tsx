@@ -88,20 +88,21 @@ export default function Board() {
 
 function TitleScreen({ config }: { config: { team1Name: string; team2Name: string } }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
-      <div className="flex-1 flex flex-col items-center justify-center gap-8">
+      <div className="flex-1 flex flex-col items-center pt-6 gap-3">
         <img
           src="/Game_Show_Owl.webp"
           alt="Equity Feud Owl"
           className="owl-idle object-contain"
-          style={{ width: 420, height: 420, filter: 'drop-shadow(0 0 40px rgba(255,200,50,0.45)) drop-shadow(0 0 80px rgba(172,34,40,0.35))' }}
+          style={{ width: 550, height: 550, filter: 'drop-shadow(0 0 60px rgba(255,200,50,0.5)) drop-shadow(0 0 100px rgba(172,34,40,0.4))' }}
         />
-        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow">EQUITY FEUD</h1>
-        <div className="flex gap-16 text-3xl font-bungee">
-          <span className="text-blue-400">{config.team1Name}</span>
-          <span className="text-white opacity-40">VS</span>
-          <span className="text-[var(--aep-red)]">{config.team2Name}</span>
+        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow -mt-2">EQUITY FEUD</h1>
+        <p className="font-bungee text-xl tracking-widest text-white/30 tagline-pulse">SURVEY SAYS...</p>
+        <div className="flex gap-10 text-5xl font-bungee items-center mt-2">
+          <span className="text-blue-400 team-glow-blue">{config.team1Name}</span>
+          <span className="text-white/30 text-4xl">VS</span>
+          <span className="text-[var(--aep-red)] team-glow-red">{config.team2Name}</span>
         </div>
       </div>
     </div>

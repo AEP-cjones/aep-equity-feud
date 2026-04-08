@@ -148,3 +148,50 @@ body {
 .title-glow {
   animation: titleGlow 2s ease-in-out infinite;
 }
+
+/* Title screen animated background */
+.title-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.title-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 30%, rgba(255,215,0,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 70%, rgba(200,16,46,0.05) 0%, transparent 60%);
+  animation: bgPulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.title-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes bgPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Team name glows */
+.team-glow-blue {
+  text-shadow: 0 0 20px rgba(96,165,250,0.5), 0 0 40px rgba(96,165,250,0.2);
+}
+
+.team-glow-red {
+  text-shadow: 0 0 20px rgba(200,16,46,0.6), 0 0 40px rgba(200,16,46,0.3);
+}
+
+/* Tagline pulse */
+@keyframes taglinePulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.55; }
+}
+
+.tagline-pulse {
+  animation: taglinePulse 3s ease-in-out infinite;
+}
