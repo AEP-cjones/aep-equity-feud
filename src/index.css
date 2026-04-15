@@ -247,6 +247,26 @@ body {
   animation: splashScaleIn 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* Host page two-column layout — single col below 1024px, split above */
+.host-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .host-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+.host-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 /* Steal banner: red pulsing border + soft entrance */
 @keyframes stealPulse {
   0%, 100% {

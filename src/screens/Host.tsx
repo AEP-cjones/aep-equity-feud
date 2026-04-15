@@ -35,149 +35,159 @@ export default function Host() {
     <div className="min-h-screen flex flex-col">
       <AepHeader />
       <Scoreboard gameState={gameState} config={config} />
-      <div className="p-4 max-w-3xl mx-auto w-full space-y-4">
-        {/* Steal banner — lifted to the top so the host can't miss the one-shot decision */}
+      <div
+        className="mx-auto w-full"
+        style={{ padding: 16, maxWidth: 1152 }}
+      >
+        {/* Steal banner stays full-width, above the grid, when active */}
         {gameState.status === 'steal' && (
-          <StealResolution gameState={gameState} config={config} />
+          <div style={{ marginBottom: 16 }}>
+            <StealResolution gameState={gameState} config={config} />
+          </div>
         )}
 
-        {/* Team Names */}
-        <TeamNameEditor config={config} />
+        <div className="host-grid">
+          {/* LEFT: round picker, reveal tiles, primary actions */}
+          <div className="host-col">
+            <Panel title="Round Select">
+              <div className="flex flex-wrap gap-2">
+                {roundKeys.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => handleSelectRound(key, rounds[key])}
+                    className={`px-4 py-2 rounded-lg font-bold transition-all ${
+                      gameState.currentRound === key
+                        ? 'bg-[var(--gold)] text-[var(--navy)]'
+                        : 'bg-[var(--navy-mid)] hover:bg-[var(--navy-mid)]/80'
+                    }`}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+              {roundKeys.length === 0 && (
+                <p className="opacity-50">No rounds created. Go to /admin to add rounds.</p>
+              )}
+            </Panel>
 
-        {/* Round Selector */}
-        <Panel title="Round Select">
-          <div className="flex flex-wrap gap-2">
-            {roundKeys.map((key) => (
+            {currentRound && (
+              <Panel title="Reveal Answers">
+                <h4 className="font-bungee text-lg mb-1 text-[var(--gold)]">
+                  {currentRound.question}
+                </h4>
+                <p className="text-sm opacity-50 mb-3">Tap an answer to reveal it on the board</p>
+                <div className="space-y-2">
+                  {currentRound.answers.map((answer, i) => (
+                    <AnswerRevealTile
+                      key={i}
+                      index={i}
+                      text={answer.text}
+                      points={answer.points}
+                      revealed={answer.revealed}
+                      onClick={() =>
+                        handleRevealAnswer(gameState.currentRound, i, answer.points, gameState)
+                      }
+                    />
+                  ))}
+                </div>
+              </Panel>
+            )}
+
+            <Panel title="Actions" bodyClassName="space-y-3">
               <button
-                key={key}
-                onClick={() => handleSelectRound(key, rounds[key])}
-                className={`px-4 py-2 rounded-lg font-bold transition-all ${
-                  gameState.currentRound === key
-                    ? 'bg-[var(--gold)] text-[var(--navy)]'
-                    : 'bg-[var(--navy-mid)] hover:bg-[var(--navy-mid)]/80'
-                }`}
+                onClick={() => handleStrike(gameState)}
+                disabled={gameState.strikes >= 3}
+                className="w-full py-4 bg-[var(--strike-red)] hover:bg-[var(--strike-red)]/80 disabled:opacity-30 rounded-xl font-bungee text-2xl transition-all"
               >
-                {key}
+                STRIKE! ({gameState.strikes}/3)
               </button>
-            ))}
+
+              {gameState.roundPoints > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      updateGameState({
+                        team1Score: gameState.team1Score + gameState.roundPoints,
+                        roundPoints: 0,
+                      })
+                    }}
+                    className="flex-1 py-3 bg-blue-600 rounded-lg font-bungee hover:bg-blue-500"
+                  >
+                    Award {gameState.roundPoints} to {config.team1Name}
+                  </button>
+                  <button
+                    onClick={() => {
+                      updateGameState({
+                        team2Score: gameState.team2Score + gameState.roundPoints,
+                        roundPoints: 0,
+                      })
+                    }}
+                    className="flex-1 py-3 bg-[var(--aep-red)] rounded-lg font-bungee hover:bg-red-600"
+                  >
+                    Award {gameState.roundPoints} to {config.team2Name}
+                  </button>
+                </div>
+              )}
+
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => updateGameState({ status: 'title' })}
+                  className="px-4 py-2 bg-[var(--navy-mid)] rounded-lg hover:bg-[var(--navy-mid)]/80"
+                >
+                  Title Screen
+                </button>
+                <button
+                  onClick={() => updateGameState({ status: 'final' })}
+                  className="px-4 py-2 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bold hover:bg-[var(--gold-dark)]"
+                >
+                  Final Scores
+                </button>
+                <button
+                  onClick={() => handleResetGame()}
+                  className="px-4 py-2 bg-red-900 rounded-lg hover:bg-red-800"
+                >
+                  Reset Game
+                </button>
+              </div>
+            </Panel>
           </div>
-          {roundKeys.length === 0 && (
-            <p className="opacity-50">No rounds created. Go to /admin to add rounds.</p>
-          )}
-        </Panel>
 
-        {/* Audience */}
-        <AudiencePanel
-          currentRoundId={gameState.currentRound}
-          team1Name={config.team1Name}
-          team2Name={config.team2Name}
-        />
-
-        {/* Current Round Answers */}
-        {currentRound && (
-          <Panel title="Reveal Answers">
-            <h4 className="font-bungee text-lg mb-1 text-[var(--gold)]">
-              {currentRound.question}
-            </h4>
-            <p className="text-sm opacity-50 mb-3">Tap an answer to reveal it on the board</p>
-            <div className="space-y-2">
-              {currentRound.answers.map((answer, i) => (
-                <AnswerRevealTile
-                  key={i}
-                  index={i}
-                  text={answer.text}
-                  points={answer.points}
-                  revealed={answer.revealed}
-                  onClick={() =>
-                    handleRevealAnswer(gameState.currentRound, i, answer.points, gameState)
+          {/* RIGHT: live state — teams, audience, names */}
+          <div className="host-col">
+            <Panel title="Teams">
+              <div className="grid grid-cols-2 gap-3">
+                <TeamControlCard
+                  name={config.team1Name}
+                  score={gameState.team1Score}
+                  accent="blue"
+                  active={gameState.activeTeam === 1}
+                  onActivate={() => updateGameState({ activeTeam: 1 })}
+                  onAdd={(n) =>
+                    updateGameState({ team1Score: gameState.team1Score + n })
                   }
                 />
-              ))}
-            </div>
-          </Panel>
-        )}
+                <TeamControlCard
+                  name={config.team2Name}
+                  score={gameState.team2Score}
+                  accent="red"
+                  active={gameState.activeTeam === 2}
+                  onActivate={() => updateGameState({ activeTeam: 2 })}
+                  onAdd={(n) =>
+                    updateGameState({ team2Score: gameState.team2Score + n })
+                  }
+                />
+              </div>
+            </Panel>
 
-        {/* Game Controls */}
-        <Panel title="Controls" bodyClassName="space-y-3">
-          {/* Strike Button */}
-          <button
-            onClick={() => handleStrike(gameState)}
-            disabled={gameState.strikes >= 3}
-            className="w-full py-4 bg-[var(--strike-red)] hover:bg-[var(--strike-red)]/80 disabled:opacity-30 rounded-xl font-bungee text-2xl transition-all"
-          >
-            STRIKE! ({gameState.strikes}/3)
-          </button>
-
-          {/* Team Control Cards — combines activeTeam picker + score stepper */}
-          <div className="grid grid-cols-2 gap-3">
-            <TeamControlCard
-              name={config.team1Name}
-              score={gameState.team1Score}
-              accent="blue"
-              active={gameState.activeTeam === 1}
-              onActivate={() => updateGameState({ activeTeam: 1 })}
-              onAdd={(n) => updateGameState({ team1Score: gameState.team1Score + n })}
+            <AudiencePanel
+              currentRoundId={gameState.currentRound}
+              team1Name={config.team1Name}
+              team2Name={config.team2Name}
             />
-            <TeamControlCard
-              name={config.team2Name}
-              score={gameState.team2Score}
-              accent="red"
-              active={gameState.activeTeam === 2}
-              onActivate={() => updateGameState({ activeTeam: 2 })}
-              onAdd={(n) => updateGameState({ team2Score: gameState.team2Score + n })}
-            />
-          </div>
 
-          {/* Award Round Points */}
-          {gameState.roundPoints > 0 && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  updateGameState({
-                    team1Score: gameState.team1Score + gameState.roundPoints,
-                    roundPoints: 0,
-                  })
-                }}
-                className="flex-1 py-3 bg-blue-600 rounded-lg font-bungee hover:bg-blue-500"
-              >
-                Award {gameState.roundPoints} to {config.team1Name}
-              </button>
-              <button
-                onClick={() => {
-                  updateGameState({
-                    team2Score: gameState.team2Score + gameState.roundPoints,
-                    roundPoints: 0,
-                  })
-                }}
-                className="flex-1 py-3 bg-[var(--aep-red)] rounded-lg font-bungee hover:bg-red-600"
-              >
-                Award {gameState.roundPoints} to {config.team2Name}
-              </button>
-            </div>
-          )}
-
-          {/* Game State Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => updateGameState({ status: 'title' })}
-              className="px-4 py-2 bg-[var(--navy-mid)] rounded-lg hover:bg-[var(--navy-mid)]/80"
-            >
-              Title Screen
-            </button>
-            <button
-              onClick={() => updateGameState({ status: 'final' })}
-              className="px-4 py-2 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bold hover:bg-[var(--gold-dark)]"
-            >
-              Final Scores
-            </button>
-            <button
-              onClick={() => handleResetGame()}
-              className="px-4 py-2 bg-red-900 rounded-lg hover:bg-red-800"
-            >
-              Reset Game
-            </button>
+            <TeamNameEditor config={config} />
           </div>
-        </Panel>
+        </div>
       </div>
     </div>
   )
