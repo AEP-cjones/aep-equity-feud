@@ -22,8 +22,7 @@ export default function AnswerCard({ answer, index, large }: Props) {
   }, [answer.revealed])
 
   const height = large ? 'h-20' : 'h-16'
-  const textSize = large ? 'text-3xl' : 'text-2xl'
-  const pointSize = large ? 'text-2xl' : 'text-xl'
+  const textSize = large ? 'text-2xl' : 'text-xl'
 
   return (
     <div className={`flip-card w-full ${height} ${justRevealed ? 'reveal-glow' : ''}`}>
@@ -33,11 +32,25 @@ export default function AnswerCard({ answer, index, large }: Props) {
             {index + 1}
           </span>
         </div>
-        <div className="flip-card-back px-4 flex justify-between">
-          <span className={`font-bungee ${textSize} truncate flex-1 text-left`}>
+        {/* Revealed face: centered answer text + small points badge on the right */}
+        <div className="flip-card-back relative px-12 flex items-center justify-center">
+          <span className={`font-bungee ${textSize} text-center truncate text-[var(--navy)]`}>
             {answer.text}
           </span>
-          <span className={`font-bungee ${pointSize} ml-4 text-[var(--navy)]`}>
+          <span
+            className="absolute font-bungee text-2xl text-white"
+            style={{
+              right: '0.6rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              minWidth: '3.25rem',
+              padding: '0.35rem 0.5rem',
+              borderRadius: '0.5rem',
+              background: 'linear-gradient(180deg, #1f4a7a, #143759)',
+              boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.15), 0 1px 0 rgba(0,0,0,0.4)',
+              textAlign: 'center',
+            }}
+          >
             {answer.points}
           </span>
         </div>

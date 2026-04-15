@@ -196,6 +196,35 @@ body {
   animation: taglinePulse 3s ease-in-out infinite;
 }
 
+/* Marquee bulbs (Vegas-style chase lights around the answer board) */
+.marquee-bulb {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  transform: translate(-50%, -50%);
+  animation: bulbChase 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes bulbChase {
+  0%, 100% {
+    opacity: 0.35;
+    box-shadow:
+      0 0 4px rgba(255, 215, 0, 0.4),
+      inset 0 0 2px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 12px rgba(255, 215, 0, 0.95),
+      0 0 24px rgba(255, 215, 0, 0.55),
+      inset 0 0 2px rgba(255, 255, 255, 0.6);
+  }
+}
+
 /* "THEIR TURN" pointer pulse — brighter than tagline-pulse */
 @keyframes turnPointerPulse {
   0%, 100% { opacity: 0.7; transform: translateY(0); }

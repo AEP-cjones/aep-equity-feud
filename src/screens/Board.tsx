@@ -48,28 +48,37 @@ export default function Board() {
           </h2>
         </div>
 
-        {/* Answer Board — sticks just below the question, framed as a stage */}
-        <div className="flex-1 flex items-start justify-center">
-          <div className="w-full max-w-4xl">
-            <div
-              style={{
-                border: '2px solid rgba(255, 215, 0, 0.28)',
-                borderRadius: '1.25rem',
-                padding: '1.5rem',
-                background: 'linear-gradient(180deg, rgba(13,33,55,0.55), rgba(10,22,40,0.75))',
-                boxShadow: 'inset 0 0 40px rgba(255,215,0,0.05), 0 0 30px rgba(0,0,0,0.35)',
-              }}
-            >
-              {currentRound?.answers ? (
-                <div className="grid grid-cols-1 gap-3">
-                  {currentRound.answers.map((answer, i) => (
-                    <AnswerCard key={i} answer={answer} index={i} large />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center opacity-50 text-xl py-8">No round loaded</p>
-              )}
-            </div>
+        {/* Answer Board — 2-column layout in a marquee-light stage */}
+        <div className="flex items-start justify-center">
+          <div className="w-full max-w-5xl">
+            <MarqueeFrame>
+              <div
+                style={{
+                  border: '2px solid rgba(255, 215, 0, 0.28)',
+                  borderRadius: '1.25rem',
+                  padding: '1.5rem',
+                  background: 'linear-gradient(180deg, rgba(13,33,55,0.55), rgba(10,22,40,0.75))',
+                  boxShadow: 'inset 0 0 40px rgba(255,215,0,0.05), 0 0 30px rgba(0,0,0,0.35)',
+                }}
+              >
+                {currentRound?.answers ? (
+                  <div
+                    className="grid gap-3"
+                    style={{
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                      gridTemplateRows: `repeat(${Math.ceil(currentRound.answers.length / 2)}, minmax(0, 1fr))`,
+                      gridAutoFlow: 'column',
+                    }}
+                  >
+                    {currentRound.answers.map((answer, i) => (
+                      <AnswerCard key={i} answer={answer} index={i} large />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center opacity-50 text-xl py-8">No round loaded</p>
+                )}
+              </div>
+            </MarqueeFrame>
           </div>
         </div>
 
@@ -233,6 +242,73 @@ function TeamScore({
           👥 {audienceCount} {audienceCount === 1 ? 'fan' : 'fans'}
         </p>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Vegas-marquee chase lights wrapped around the answer board. Bulbs sit
+ * just outside the inner stage border. Each bulb has a staggered animation
+ * delay so the highlight runs around the perimeter clockwise.
+ */
+function MarqueeFrame({ children }: { children: React.ReactNode }) {
+  const HORIZ = 16
+  const VERT = 7
+  const total = HORIZ * 2 + VERT * 2
+  const delayFor = (i: number) => `${(i / total) * 2}s` // 2s loop
+
+  // Build position arrays going clockwise: top-left → top-right → right-top → right-bottom →
+  // bottom-right → bottom-left → left-bottom → left-top.
+  const bulbs: Array<{ key: string; style: React.CSSProperties; idx: number }> = []
+  let idx = 0
+
+  // Top edge
+  for (let i = 0; i < HORIZ; i++) {
+    bulbs.push({
+      key: `t${i}`,
+      idx,
+      style: { left: `${((i + 0.5) * 100) / HORIZ}%`, top: '-6px' },
+    })
+    idx++
+  }
+  // Right edge
+  for (let i = 0; i < VERT; i++) {
+    bulbs.push({
+      key: `r${i}`,
+      idx,
+      style: { top: `${((i + 0.5) * 100) / VERT}%`, right: '-6px' },
+    })
+    idx++
+  }
+  // Bottom edge (reversed for clockwise flow)
+  for (let i = HORIZ - 1; i >= 0; i--) {
+    bulbs.push({
+      key: `b${i}`,
+      idx,
+      style: { left: `${((i + 0.5) * 100) / HORIZ}%`, bottom: '-6px' },
+    })
+    idx++
+  }
+  // Left edge (reversed for clockwise flow)
+  for (let i = VERT - 1; i >= 0; i--) {
+    bulbs.push({
+      key: `l${i}`,
+      idx,
+      style: { top: `${((i + 0.5) * 100) / VERT}%`, left: '-6px' },
+    })
+    idx++
+  }
+
+  return (
+    <div className="relative">
+      {bulbs.map((b) => (
+        <span
+          key={b.key}
+          className="marquee-bulb"
+          style={{ ...b.style, animationDelay: delayFor(b.idx) }}
+        />
+      ))}
+      {children}
     </div>
   )
 }
