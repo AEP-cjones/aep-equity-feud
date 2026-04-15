@@ -93,8 +93,9 @@ export default function Board() {
           </div>
         </div>
 
-        {/* Round Points — gold pill */}
-        <div className="text-center" style={{ marginTop: '2rem', marginBottom: '0.75rem' }}>
+        {/* Round Points — gold pill. Large top margin keeps it clear of the
+            outer marquee ring (bulb center 28px below stage + ~16px glow). */}
+        <div className="text-center" style={{ marginTop: '3.5rem', marginBottom: '0.75rem' }}>
           <RoundPointsPill value={gameState.roundPoints} />
         </div>
 
@@ -383,15 +384,23 @@ function MarqueeFrame({ children }: { children: React.ReactNode }) {
     return () => obs.disconnect()
   }, [])
 
+  // Pick edge bulb counts from stage aspect ratio. Both rings use the SAME
+  // nHoriz/nVert so every bulb on the outer ring sits directly outside the
+  // matching inner-ring bulb (concentric, no drift around the frame).
+  const TARGET_SPACING = 54
+  const nHoriz = dims ? Math.max(4, Math.round(dims.w / TARGET_SPACING) + 1) : 0
+  const nVert = dims ? Math.max(3, Math.round(dims.h / TARGET_SPACING) + 1) : 0
+
   return (
     <div ref={ref} className="relative">
       {dims && (
         <>
-          {/* Inner ring — closer to stage, bigger bulbs, ~54px spacing */}
-          <MarqueeRing dims={dims} offset={12} spacingPx={54} size={10} loopSeconds={2} />
-          {/* Outer ring — further out, smaller bulbs, ~58px spacing, slightly
-              different loop length so the chase drifts against the inner ring. */}
-          <MarqueeRing dims={dims} offset={28} spacingPx={58} size={7} loopSeconds={2.4} />
+          {/* Both rings share nHoriz/nVert AND loopSeconds so bulb `i` on
+              the outer ring fires at exactly the same moment as bulb `i`
+              on the inner ring — the two concentric bulbs pulse together
+              as one "fat" highlight that rotates around the frame. */}
+          <MarqueeRing dims={dims} offset={12} nHoriz={nHoriz} nVert={nVert} size={10} loopSeconds={2} />
+          <MarqueeRing dims={dims} offset={28} nHoriz={nHoriz} nVert={nVert} size={7} loopSeconds={2} />
         </>
       )}
       {children}
@@ -406,73 +415,105 @@ function MarqueeFrame({ children }: { children: React.ReactNode }) {
  * 0.5 = half a slot, landing between the inner ring's bulbs).
  */
 /**
- * Places bulbs at uniform arc-length intervals around the expanded rectangle
- * (stage + offset in each direction). Corners are naturally covered because
- * the perimeter is treated as a single continuous loop. Spacing is
- * near-uniform regardless of stage aspect ratio.
+ * Places bulbs along each edge of the stage using STAGE-relative coordinates
+ * (not expanded-rectangle-relative). Top/bottom edges place nHoriz bulbs
+ * inclusive of both corners; side edges place nVert bulbs exclusive of
+ * corners (since corners are covered by top/bottom). Because both rings
+ * use identical nHoriz/nVert and the same stage coordinates, every outer
+ * bulb sits directly outside the matching inner bulb — rings stay
+ * concentric the whole way around, no drift.
  */
 function MarqueeRing({
   dims,
   offset,
-  spacingPx,
+  nHoriz,
+  nVert,
   size,
   loopSeconds,
 }: {
   dims: { w: number; h: number }
   offset: number
-  spacingPx: number
+  nHoriz: number
+  nVert: number
   size: number
   loopSeconds: number
 }) {
   const half = size / 2
-  // Expand the rectangle outward by `offset` so bulbs sit outside the stage
-  // border. The bulb path traces this expanded rectangle's perimeter.
-  const W = dims.w + 2 * offset
-  const H = dims.h + 2 * offset
-  const perimeter = 2 * (W + H)
-  const n = Math.max(4, Math.round(perimeter / spacingPx))
-  const step = perimeter / n
-
-  // Convert an arc-length position d (0..perimeter) clockwise from TL into
-  // (left, top) coordinates for the bulb center, measured from the stage
-  // container's top-left corner. Negative values mean outside the stage.
-  const project = (d: number): { left: number; top: number } => {
-    if (d < W) return { left: -offset + d, top: -offset }
-    d -= W
-    if (d < H) return { left: dims.w + offset, top: -offset + d }
-    d -= H
-    if (d < W) return { left: dims.w + offset - d, top: dims.h + offset }
-    d -= W
-    return { left: -offset, top: dims.h + offset - d }
+  const bulbBase: React.CSSProperties = {
+    width: size,
+    height: size,
+    position: 'absolute',
+    borderRadius: '50%',
+    pointerEvents: 'none',
   }
 
-  const bulbs = Array.from({ length: n }, (_, i) => {
-    const { left, top } = project(i * step)
-    return {
-      key: i,
-      idx: i,
-      style: {
-        width: size,
-        height: size,
-        position: 'absolute' as const,
-        borderRadius: '50%',
-        pointerEvents: 'none' as const,
-        left: left - half,
-        top: top - half,
-      },
-    }
+  const bulbs: Array<{ key: string; style: React.CSSProperties }> = []
+
+  // Top edge — includes both TL and TR corners (on the top-edge line)
+  for (let i = 0; i < nHoriz; i++) {
+    const x = (i / (nHoriz - 1)) * dims.w
+    bulbs.push({
+      key: `t${i}`,
+      style: { ...bulbBase, top: -offset - half, left: x - half },
+    })
+  }
+  // Diagonal TR corner bulb (at 45°, outside the stage corner).
+  bulbs.push({
+    key: 'c-tr',
+    style: { ...bulbBase, top: -offset - half, right: -offset - half },
+  })
+  // Right edge — interior bulbs only. The corner is covered by top-last
+  // + diagonal TR + bottom-last + diagonal BR (an L cluster per ring).
+  for (let i = 1; i < nVert - 1; i++) {
+    const y = (i / (nVert - 1)) * dims.h
+    bulbs.push({
+      key: `r${i}`,
+      style: { ...bulbBase, right: -offset - half, top: y - half },
+    })
+  }
+  // Diagonal BR corner bulb
+  bulbs.push({
+    key: 'c-br',
+    style: { ...bulbBase, bottom: -offset - half, right: -offset - half },
+  })
+  // Bottom edge — includes both BR and BL corners, reversed for clockwise
+  for (let i = nHoriz - 1; i >= 0; i--) {
+    const x = (i / (nHoriz - 1)) * dims.w
+    bulbs.push({
+      key: `b${i}`,
+      style: { ...bulbBase, bottom: -offset - half, left: x - half },
+    })
+  }
+  // Diagonal BL corner bulb
+  bulbs.push({
+    key: 'c-bl',
+    style: { ...bulbBase, bottom: -offset - half, left: -offset - half },
+  })
+  // Left edge — interior only, reversed for clockwise flow
+  for (let i = nVert - 2; i >= 1; i--) {
+    const y = (i / (nVert - 1)) * dims.h
+    bulbs.push({
+      key: `l${i}`,
+      style: { ...bulbBase, left: -offset - half, top: y - half },
+    })
+  }
+  // Diagonal TL corner bulb (completes the cycle)
+  bulbs.push({
+    key: 'c-tl',
+    style: { ...bulbBase, top: -offset - half, left: -offset - half },
   })
 
+  const total = bulbs.length
   return (
     <>
-      {bulbs.map((b) => (
+      {bulbs.map((b, idx) => (
         <span
           key={b.key}
           className="marquee-bulb"
           style={{
             ...b.style,
             animation: `bulbChase ${loopSeconds}s ease-in-out infinite`,
-            animationDelay: `${(b.idx / n) * loopSeconds}s`,
+            animationDelay: `${(idx / total) * loopSeconds}s`,
           }}
         />
       ))}
