@@ -106,40 +106,33 @@ export default function Admin() {
   const roundKeys = Object.keys(rounds || {})
   const leadCount = leads ? Object.keys(leads).length : 0
 
+  async function handleAddRound() {
+    const id = await createRound({
+      question: 'New Question',
+      answers: [
+        { text: 'Answer 1', points: 40, revealed: false },
+        { text: 'Answer 2', points: 30, revealed: false },
+        { text: 'Answer 3', points: 20, revealed: false },
+        { text: 'Answer 4', points: 10, revealed: false },
+        { text: 'Answer 5', points: 5, revealed: false },
+      ],
+    })
+    setEditingRound(id)
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <AepHeader />
+      <AdminToolbar
+        tab={tab}
+        onTabChange={setTab}
+        roundCount={roundKeys.length}
+        leadCount={leadCount}
+        onAddRound={handleAddRound}
+      />
       <div className="p-4 max-w-3xl mx-auto w-full space-y-4">
-        <h1 className="font-bungee text-2xl text-[var(--gold)] text-center">Admin Panel</h1>
-
-        <TabBar
-          tab={tab}
-          onChange={setTab}
-          roundCount={roundKeys.length}
-          leadCount={leadCount}
-        />
-
         {tab === 'rounds' ? (
           <>
-            <button
-              onClick={async () => {
-                const id = await createRound({
-                  question: 'New Question',
-                  answers: [
-                    { text: 'Answer 1', points: 40, revealed: false },
-                    { text: 'Answer 2', points: 30, revealed: false },
-                    { text: 'Answer 3', points: 20, revealed: false },
-                    { text: 'Answer 4', points: 10, revealed: false },
-                    { text: 'Answer 5', points: 5, revealed: false },
-                  ],
-                })
-                setEditingRound(id)
-              }}
-              className="w-full py-3 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bungee hover:bg-[var(--gold-dark)]"
-            >
-              + Add Round
-            </button>
-
             {roundKeys.map((key) => (
               <RoundEditor
                 key={key}
@@ -157,11 +150,74 @@ export default function Admin() {
             ))}
 
             {roundKeys.length === 0 && (
-              <p className="text-center opacity-50 py-8">No rounds yet. Add one above.</p>
+              <p className="text-center opacity-50 py-8">
+                No rounds yet. Use “+ Add Round” above to create one.
+              </p>
             )}
           </>
         ) : (
           <LeadsSection />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AdminToolbar({
+  tab,
+  onTabChange,
+  roundCount,
+  leadCount,
+  onAddRound,
+}: {
+  tab: 'rounds' | 'leads'
+  onTabChange: (t: 'rounds' | 'leads') => void
+  roundCount: number
+  leadCount: number
+  onAddRound: () => void
+}) {
+  return (
+    <div
+      className="sticky top-0 z-30 w-full"
+      style={{
+        background: 'linear-gradient(180deg, var(--navy-light) 0%, var(--navy) 100%)',
+        borderBottom: '2px solid var(--gold)',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.45)',
+      }}
+    >
+      <div
+        className="max-w-3xl mx-auto flex items-center"
+        style={{ padding: '12px 16px', gap: 12 }}
+      >
+        <h1
+          className="font-bungee tracking-[0.16em] uppercase shrink-0"
+          style={{ color: 'var(--gold)', fontSize: 16 }}
+        >
+          Admin
+        </h1>
+        <div className="flex-1 min-w-0">
+          <TabBar
+            tab={tab}
+            onChange={onTabChange}
+            roundCount={roundCount}
+            leadCount={leadCount}
+          />
+        </div>
+        {tab === 'rounds' && (
+          <button
+            onClick={onAddRound}
+            className="shrink-0 rounded-lg font-bungee tracking-widest transition-all hover:brightness-110 active:scale-[0.98]"
+            style={{
+              padding: '8px 16px',
+              fontSize: 14,
+              background: 'linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%)',
+              color: 'var(--navy)',
+              boxShadow:
+                '0 4px 12px rgba(255,215,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4)',
+            }}
+          >
+            + Add Round
+          </button>
         )}
       </div>
     </div>
@@ -218,8 +274,11 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className="flex-1 py-3 px-4 flex items-center justify-center gap-2 font-bungee tracking-[0.18em] uppercase text-sm transition-all relative"
+      className="flex-1 flex items-center justify-center font-bungee tracking-[0.18em] uppercase transition-all relative"
       style={{
+        padding: '10px 16px',
+        gap: 8,
+        fontSize: 13,
         background: active ? 'rgba(255,215,0,0.08)' : 'transparent',
         color: active ? 'var(--gold)' : 'rgba(255,255,255,0.5)',
         borderBottom: active
