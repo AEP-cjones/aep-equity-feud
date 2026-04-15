@@ -299,10 +299,38 @@ function RoundEditor({
     >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 hover:bg-[var(--navy-mid)]/30 transition-colors"
+        className="w-full flex items-center gap-3 p-4 hover:bg-[var(--navy-mid)]/30 transition-colors text-left"
       >
-        <span className="font-bungee text-lg">{roundId}</span>
-        <span className="text-sm opacity-70 truncate max-w-[60%] text-right">{round.question}</span>
+        <span
+          className="font-bungee text-lg shrink-0"
+          style={{ color: 'var(--gold)' }}
+        >
+          {roundId.toUpperCase()}
+        </span>
+        <span
+          className="shrink-0 text-[10px] tracking-widest uppercase font-bungee px-2 py-0.5 rounded"
+          style={{
+            background: 'rgba(255,215,0,0.1)',
+            color: 'var(--gold)',
+            border: '1px solid rgba(255,215,0,0.3)',
+          }}
+        >
+          {round.answers.length} {round.answers.length === 1 ? 'answer' : 'answers'}
+        </span>
+        <span
+          className="shrink-0 text-[10px] tracking-widest uppercase opacity-70"
+        >
+          {round.answers.reduce((sum, a) => sum + (a.points || 0), 0)} pts
+        </span>
+        <span className="flex-1 text-sm opacity-80 truncate italic">
+          {round.question || <em className="opacity-50 not-italic">(no question)</em>}
+        </span>
+        <span
+          className="shrink-0 opacity-50 transition-transform"
+          style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          ▸
+        </span>
       </button>
 
       {isExpanded && (
