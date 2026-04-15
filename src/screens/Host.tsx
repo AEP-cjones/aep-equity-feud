@@ -108,40 +108,22 @@ export default function Host() {
             STRIKE! ({gameState.strikes}/3)
           </button>
 
-          {/* Active Team Toggle */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => updateGameState({ activeTeam: 1 })}
-              className={`flex-1 py-3 rounded-lg font-bungee transition-all ${
-                gameState.activeTeam === 1
-                  ? 'bg-blue-600 ring-2 ring-blue-400'
-                  : 'bg-[var(--navy-mid)]'
-              }`}
-            >
-              {config.team1Name}
-            </button>
-            <button
-              onClick={() => updateGameState({ activeTeam: 2 })}
-              className={`flex-1 py-3 rounded-lg font-bungee transition-all ${
-                gameState.activeTeam === 2
-                  ? 'bg-[var(--aep-red)] ring-2 ring-red-400'
-                  : 'bg-[var(--navy-mid)]'
-              }`}
-            >
-              {config.team2Name}
-            </button>
-          </div>
-
-          {/* Score Adjustment */}
-          <div className="grid grid-cols-2 gap-4">
-            <ScoreControl
-              label={config.team1Name}
+          {/* Team Control Cards — combines activeTeam picker + score stepper */}
+          <div className="grid grid-cols-2 gap-3">
+            <TeamControlCard
+              name={config.team1Name}
               score={gameState.team1Score}
+              accent="blue"
+              active={gameState.activeTeam === 1}
+              onActivate={() => updateGameState({ activeTeam: 1 })}
               onAdd={(n) => updateGameState({ team1Score: gameState.team1Score + n })}
             />
-            <ScoreControl
-              label={config.team2Name}
+            <TeamControlCard
+              name={config.team2Name}
               score={gameState.team2Score}
+              accent="red"
+              active={gameState.activeTeam === 2}
+              onActivate={() => updateGameState({ activeTeam: 2 })}
               onAdd={(n) => updateGameState({ team2Score: gameState.team2Score + n })}
             />
           </div>
@@ -629,45 +611,102 @@ function groupAnswersByTeam(answers: Record<string, AudienceAnswer> | null | und
   return { team1: toSorted(counts.team1), team2: toSorted(counts.team2) }
 }
 
-function ScoreControl({
-  label,
+function TeamControlCard({
+  name,
   score,
+  accent,
+  active,
+  onActivate,
   onAdd,
 }: {
-  label: string
+  name: string
   score: number
+  accent: 'blue' | 'red'
+  active: boolean
+  onActivate: () => void
   onAdd: (n: number) => void
 }) {
+  const accentColor = accent === 'blue' ? '#60a5fa' : 'var(--aep-red)'
+  const accentBg = accent === 'blue' ? 'rgba(96,165,250,0.12)' : 'rgba(200,16,46,0.12)'
+  const accentRing = accent === 'blue' ? 'rgba(96,165,250,0.4)' : 'rgba(200,16,46,0.4)'
+
   return (
-    <div className="text-center">
-      <p className="text-xs opacity-50 mb-1">{label}</p>
-      <p className="font-bungee text-2xl text-[var(--gold)] mb-2">{score}</p>
-      <div className="flex gap-1 justify-center">
-        <button
-          onClick={() => onAdd(-10)}
-          className="px-3 py-1 bg-red-900/50 rounded text-sm hover:bg-red-800"
+    <div
+      className="rounded-xl overflow-hidden transition-all relative"
+      style={{
+        background: active ? accentBg : 'var(--navy-mid)',
+        boxShadow: active
+          ? `inset 0 0 0 2px var(--gold), 0 0 20px rgba(255,215,0,0.22)`
+          : `inset 0 0 0 1px ${accentRing}`,
+      }}
+    >
+      {/* Tap header to set active */}
+      <button
+        onClick={onActivate}
+        className="w-full px-3 py-2 flex items-center justify-between hover:brightness-125 transition-all"
+        style={{
+          background: `linear-gradient(180deg, ${accentColor} 0%, color-mix(in srgb, ${accentColor} 65%, black) 100%)`,
+          color: accent === 'blue' ? '#0a1628' : 'white',
+        }}
+      >
+        <span className="font-bungee text-sm tracking-[0.12em] uppercase truncate">
+          {name}
+        </span>
+        {active ? (
+          <span className="text-[10px] tracking-[0.22em] uppercase font-bungee opacity-80">
+            Their Turn
+          </span>
+        ) : (
+          <span className="text-[10px] tracking-[0.18em] uppercase opacity-70">
+            Tap to activate
+          </span>
+        )}
+      </button>
+
+      <div className="px-3 py-3 text-center">
+        <p
+          className="font-bungee text-4xl tabular-nums leading-none"
+          style={{
+            color: 'var(--gold)',
+            textShadow: '0 2px 10px rgba(255,215,0,0.35)',
+          }}
         >
-          -10
-        </button>
-        <button
-          onClick={() => onAdd(-5)}
-          className="px-3 py-1 bg-red-900/50 rounded text-sm hover:bg-red-800"
-        >
-          -5
-        </button>
-        <button
-          onClick={() => onAdd(5)}
-          className="px-3 py-1 bg-green-900/50 rounded text-sm hover:bg-green-800"
-        >
-          +5
-        </button>
-        <button
-          onClick={() => onAdd(10)}
-          className="px-3 py-1 bg-green-900/50 rounded text-sm hover:bg-green-800"
-        >
-          +10
-        </button>
+          {score}
+        </p>
+        <div className="flex gap-1 justify-center mt-3">
+          <StepperButton sign="-" onClick={() => onAdd(-10)}>−10</StepperButton>
+          <StepperButton sign="-" onClick={() => onAdd(-5)}>−5</StepperButton>
+          <StepperButton sign="+" onClick={() => onAdd(5)}>+5</StepperButton>
+          <StepperButton sign="+" onClick={() => onAdd(10)}>+10</StepperButton>
+        </div>
       </div>
     </div>
+  )
+}
+
+function StepperButton({
+  sign,
+  onClick,
+  children,
+}: {
+  sign: '+' | '-'
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  const base =
+    sign === '+'
+      ? 'bg-green-900/60 hover:bg-green-800 border-green-700/50'
+      : 'bg-red-900/60 hover:bg-red-800 border-red-700/50'
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className={`px-3 py-1.5 rounded-md text-sm font-bungee tracking-wider border ${base} transition-all active:scale-95`}
+      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }}
+    >
+      {children}
+    </button>
   )
 }
