@@ -319,6 +319,44 @@ function LeadsSection() {
   )
 }
 
+function SaveStatus({
+  state,
+  dirty,
+}: {
+  state: 'idle' | 'saving' | 'saved'
+  dirty: boolean
+}) {
+  if (state === 'saving' || dirty) {
+    return (
+      <span
+        className="text-xs tracking-widest uppercase px-3 py-1.5 rounded-full"
+        style={{
+          background: 'rgba(255,215,0,0.08)',
+          color: 'rgba(255,215,0,0.7)',
+          border: '1px solid rgba(255,215,0,0.25)',
+        }}
+      >
+        Saving…
+      </span>
+    )
+  }
+  if (state === 'saved') {
+    return (
+      <span
+        className="text-xs tracking-widest uppercase px-3 py-1.5 rounded-full transition-opacity"
+        style={{
+          background: 'rgba(74,222,128,0.1)',
+          color: '#4ade80',
+          border: '1px solid rgba(74,222,128,0.35)',
+        }}
+      >
+        ✓ Saved
+      </span>
+    )
+  }
+  return null
+}
+
 function RoundEditor({
   roundId,
   round,
@@ -335,12 +373,32 @@ function RoundEditor({
   const [question, setQuestion] = useState(round.question)
   const [answers, setAnswers] = useState<Answer[]>(round.answers)
   const [dirty, setDirty] = useState(false)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
 
   useEffect(() => {
     setQuestion(round.question)
     setAnswers(round.answers)
     setDirty(false)
+    setSaveState('idle')
   }, [round])
+
+  // Debounced autosave: 800ms after the last edit
+  useEffect(() => {
+    if (!dirty) return
+    setSaveState('saving')
+    const handle = setTimeout(async () => {
+      await saveRound(roundId, {
+        question,
+        answers: answers.map((a) => ({ ...a, revealed: false })),
+      })
+      setDirty(false)
+      setSaveState('saved')
+      // fade the "Saved" badge after a beat
+      setTimeout(() => setSaveState('idle'), 1500)
+    }, 800)
+    return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, question, answers])
 
   function updateAnswer(index: number, field: keyof Answer, value: string | number) {
     const newAnswers = [...answers]
@@ -370,13 +428,6 @@ function RoundEditor({
     setDirty(true)
   }
 
-  async function handleSave() {
-    await saveRound(roundId, {
-      question,
-      answers: answers.map((a) => ({ ...a, revealed: false })),
-    })
-    setDirty(false)
-  }
 
   return (
     <div
@@ -441,38 +492,86 @@ function RoundEditor({
               Answers ({answers.length}/8) — ranked by points
             </label>
             {answers.map((answer, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="font-bungee text-sm w-6 text-center opacity-50">{i + 1}</span>
+              <div
+                key={i}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5"
+                style={{
+                  background: 'rgba(0,0,0,0.18)',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                }}
+              >
+                <span
+                  className="font-bungee text-sm flex items-center justify-center shrink-0 rounded-full"
+                  style={{
+                    width: 26,
+                    height: 26,
+                    background: 'rgba(255,215,0,0.12)',
+                    color: 'var(--gold)',
+                    border: '1px solid rgba(255,215,0,0.3)',
+                  }}
+                >
+                  {i + 1}
+                </span>
                 <input
                   value={answer.text}
                   onChange={(e) => updateAnswer(i, 'text', e.target.value)}
                   placeholder="Answer text"
-                  className="flex-1 bg-[var(--navy-mid)] rounded-lg px-3 py-2 text-white text-sm border border-transparent focus:border-[var(--gold)] outline-none"
+                  className="flex-1 bg-[var(--navy-mid)] rounded-lg px-3 py-2 text-white text-sm border-2 border-transparent focus:border-[var(--gold)] outline-none transition-colors"
+                  style={{ boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.25)' }}
                 />
-                <input
-                  type="number"
-                  value={answer.points}
-                  onChange={(e) => updateAnswer(i, 'points', parseInt(e.target.value) || 0)}
-                  className="w-20 bg-[var(--navy-mid)] rounded-lg px-3 py-2 text-white text-sm border border-transparent focus:border-[var(--gold)] outline-none text-center"
-                  placeholder="Pts"
-                />
-                <button
-                  onClick={() => moveAnswer(i, -1)}
-                  className="p-1 hover:text-[var(--gold)] disabled:opacity-20"
-                  disabled={i === 0}
-                >
-                  ▲
-                </button>
-                <button
-                  onClick={() => moveAnswer(i, 1)}
-                  className="p-1 hover:text-[var(--gold)] disabled:opacity-20"
-                  disabled={i === answers.length - 1}
-                >
-                  ▼
-                </button>
+                <div className="relative shrink-0">
+                  <input
+                    type="number"
+                    value={answer.points}
+                    onChange={(e) =>
+                      updateAnswer(i, 'points', parseInt(e.target.value) || 0)
+                    }
+                    className="w-20 rounded-full pl-3 pr-7 py-2 text-sm font-bungee tabular-nums text-center outline-none border-2 transition-colors"
+                    style={{
+                      background: 'rgba(255,215,0,0.08)',
+                      borderColor: 'rgba(255,215,0,0.4)',
+                      color: 'var(--gold)',
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--gold)')}
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = 'rgba(255,215,0,0.4)')
+                    }
+                    placeholder="0"
+                  />
+                  <span
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] tracking-widest pointer-events-none"
+                    style={{ color: 'var(--gold)', opacity: 0.7 }}
+                  >
+                    PTS
+                  </span>
+                </div>
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <button
+                    onClick={() => moveAnswer(i, -1)}
+                    className="text-xs leading-none px-1.5 hover:text-[var(--gold)] disabled:opacity-20"
+                    disabled={i === 0}
+                    aria-label="Move up"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveAnswer(i, 1)}
+                    className="text-xs leading-none px-1.5 hover:text-[var(--gold)] disabled:opacity-20"
+                    disabled={i === answers.length - 1}
+                    aria-label="Move down"
+                  >
+                    ▼
+                  </button>
+                </div>
                 <button
                   onClick={() => removeAnswer(i)}
-                  className="p-1 hover:text-[var(--strike-red)] text-sm"
+                  className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm transition-colors"
+                  style={{
+                    background: 'rgba(200,16,46,0.15)',
+                    border: '1px solid rgba(200,16,46,0.4)',
+                    color: 'var(--aep-red)',
+                  }}
+                  aria-label="Remove answer"
                 >
                   ✕
                 </button>
@@ -480,7 +579,7 @@ function RoundEditor({
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {answers.length < 8 && (
               <button
                 onClick={addAnswer}
@@ -489,13 +588,7 @@ function RoundEditor({
                 + Add Answer
               </button>
             )}
-            <button
-              onClick={handleSave}
-              disabled={!dirty}
-              className="px-4 py-2 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bold hover:bg-[var(--gold-dark)] disabled:opacity-30 text-sm"
-            >
-              Save Round
-            </button>
+            <SaveStatus state={saveState} dirty={dirty} />
             <button
               onClick={onDelete}
               className="px-4 py-2 bg-red-900 rounded-lg hover:bg-red-800 text-sm ml-auto"
