@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useConfig, useRounds, saveRound, deleteRound, createRound } from '../hooks/useFirebase'
+import {
+  useConfig, useRounds, saveRound, deleteRound, createRound,
+  useLeads,
+} from '../hooks/useFirebase'
+import { dbRef, remove } from '../firebase'
+import { downloadCsv } from '../utils/csv'
 import AepHeader from '../components/AepHeader'
 import type { Round, Answer } from '../types'
 
@@ -93,7 +98,84 @@ export default function Admin() {
         {roundKeys.length === 0 && (
           <p className="text-center opacity-50 py-8">No rounds yet. Add one above.</p>
         )}
+
+        <LeadsSection />
       </div>
+    </div>
+  )
+}
+
+function LeadsSection() {
+  const leads = useLeads()
+  const rows = leads ? Object.values(leads) : []
+  const count = rows.length
+
+  return (
+    <div className="bg-[var(--navy-light)] rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bungee text-lg text-[var(--gold)]">Leads ({count})</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              downloadCsv(
+                `equity-family-feud-leads-${new Date().toISOString().slice(0, 10)}.csv`,
+                rows.map((r) => ({
+                  firstName: r.firstName,
+                  lastName: r.lastName,
+                  email: r.email,
+                  company: r.company || '',
+                  phone: r.phone || '',
+                  team: r.team ?? '',
+                  submittedAt: r.submittedAt,
+                })),
+              )
+            }}
+            disabled={count === 0}
+            className="px-3 py-2 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bold hover:bg-[var(--gold-dark)] disabled:opacity-30 text-sm"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={async () => {
+              if (!confirm(`Clear all ${count} leads? This cannot be undone.`)) return
+              await remove(dbRef('leads'))
+            }}
+            disabled={count === 0}
+            className="px-3 py-2 bg-red-900 rounded-lg hover:bg-red-800 disabled:opacity-30 text-sm"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {count === 0 ? (
+        <p className="text-sm opacity-50 text-center py-4">No leads collected yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-xs opacity-60 uppercase tracking-widest">
+              <tr>
+                <th className="text-left py-2 pr-3">Name</th>
+                <th className="text-left py-2 pr-3">Email</th>
+                <th className="text-left py-2 pr-3">Company</th>
+                <th className="text-left py-2 pr-3">Phone</th>
+                <th className="text-left py-2 pr-3">Team</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} className="border-t border-white/5">
+                  <td className="py-2 pr-3">{r.firstName} {r.lastName}</td>
+                  <td className="py-2 pr-3 opacity-80">{r.email}</td>
+                  <td className="py-2 pr-3 opacity-80">{r.company || '—'}</td>
+                  <td className="py-2 pr-3 opacity-80">{r.phone || '—'}</td>
+                  <td className="py-2 pr-3 opacity-80">{r.team ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

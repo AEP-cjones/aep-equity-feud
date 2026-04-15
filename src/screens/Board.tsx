@@ -1,13 +1,17 @@
+import { useMemo } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useGameState, useConfig, useRounds } from '../hooks/useFirebase'
+import { useGameState, useConfig, useRounds, useAudiencePlayers } from '../hooks/useFirebase'
 import AepHeader from '../components/AepHeader'
 import AnswerCard from '../components/AnswerCard'
 import StrikeOverlay from '../components/StrikeOverlay'
+import type { AudiencePlayers } from '../types'
 
 export default function Board() {
   const gameState = useGameState()
   const config = useConfig()
   const rounds = useRounds()
+  const players = useAudiencePlayers()
+  const audienceCounts = useMemo(() => countByTeam(players), [players])
 
   if (!gameState || !config) {
     return (
@@ -67,6 +71,7 @@ export default function Board() {
             name={config.team1Name}
             score={gameState.team1Score}
             active={gameState.activeTeam === 1}
+            audienceCount={audienceCounts.team1}
             side="left"
           />
           <div className="flex flex-col items-center shrink-0">
@@ -81,6 +86,7 @@ export default function Board() {
             name={config.team2Name}
             score={gameState.team2Score}
             active={gameState.activeTeam === 2}
+            audienceCount={audienceCounts.team2}
             side="right"
           />
         </div>
@@ -178,11 +184,13 @@ function TeamScore({
   name,
   score,
   active,
+  audienceCount,
   side,
 }: {
   name: string
   score: number
   active: boolean
+  audienceCount: number
   side: 'left' | 'right'
 }) {
   const accent = side === 'left' ? 'text-blue-400 team-glow-blue' : 'text-[var(--aep-red)] team-glow-red'
@@ -196,6 +204,20 @@ function TeamScore({
     >
       <p className={`font-bungee text-2xl mb-2 truncate ${accent}`}>{name}</p>
       <p className="font-bungee text-6xl text-[var(--gold)] title-glow">{score}</p>
+      <p className="text-xs opacity-60 tracking-widest uppercase mt-2">
+        👥 {audienceCount} {audienceCount === 1 ? 'fan' : 'fans'}
+      </p>
     </div>
   )
+}
+
+function countByTeam(players: AudiencePlayers | null): { team1: number; team2: number } {
+  if (!players) return { team1: 0, team2: 0 }
+  let t1 = 0
+  let t2 = 0
+  for (const p of Object.values(players)) {
+    if (p.team === 1) t1++
+    else if (p.team === 2) t2++
+  }
+  return { team1: t1, team2: t2 }
 }

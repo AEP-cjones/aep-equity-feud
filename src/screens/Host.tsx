@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   useGameState,
   useConfig,
@@ -7,9 +7,12 @@ import {
   updateConfig,
   revealAnswer,
   resetRoundAnswers,
+  useAudiencePlayers,
+  useAudienceAnswersForRound,
+  resetAudience,
 } from '../hooks/useFirebase'
 import AepHeader from '../components/AepHeader'
-import type { GameState, Round } from '../types'
+import type { GameState, Round, AudiencePlayers, AudienceAnswer } from '../types'
 
 export default function Host() {
   const gameState = useGameState()
@@ -61,6 +64,13 @@ export default function Host() {
             <p className="opacity-50">No rounds created. Go to /admin to add rounds.</p>
           )}
         </div>
+
+        {/* Audience */}
+        <AudiencePanel
+          currentRoundId={gameState.currentRound}
+          team1Name={config.team1Name}
+          team2Name={config.team2Name}
+        />
 
         {/* Current Round Answers */}
         {currentRound && (
@@ -295,6 +305,135 @@ function TeamNameEditor({ config }: { config: { team1Name: string; team2Name: st
       </div>
     </div>
   )
+}
+
+function AudiencePanel({
+  currentRoundId,
+  team1Name,
+  team2Name,
+}: {
+  currentRoundId: string
+  team1Name: string
+  team2Name: string
+}) {
+  const players = useAudiencePlayers()
+  const answers = useAudienceAnswersForRound(currentRoundId || null)
+
+  const teamCounts = useMemo(() => countPlayersByTeam(players), [players])
+  const answerGroups = useMemo(() => groupAnswersByTeam(answers), [answers])
+
+  const totalPlayers = teamCounts.team1 + teamCounts.team2
+
+  return (
+    <div className="bg-[var(--navy-light)] rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bungee text-lg">Audience ({totalPlayers})</h3>
+        <button
+          onClick={async () => {
+            if (confirm('Reset the audience? This clears all players, answers, and leads.')) {
+              await resetAudience()
+            }
+          }}
+          className="text-xs px-3 py-1 bg-red-900/60 rounded hover:bg-red-800"
+        >
+          Reset audience
+        </button>
+      </div>
+
+      {/* Per-team counts */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-[var(--navy-mid)] rounded-lg p-3 text-center border border-blue-400/30">
+          <p className="text-xs opacity-60 truncate">{team1Name}</p>
+          <p className="font-bungee text-3xl text-blue-400">{teamCounts.team1}</p>
+          <p className="text-xs opacity-50">fans</p>
+        </div>
+        <div className="bg-[var(--navy-mid)] rounded-lg p-3 text-center border border-[var(--aep-red)]/30">
+          <p className="text-xs opacity-60 truncate">{team2Name}</p>
+          <p className="font-bungee text-3xl text-[var(--aep-red)]">{teamCounts.team2}</p>
+          <p className="text-xs opacity-50">fans</p>
+        </div>
+      </div>
+
+      {/* Current round answers, grouped by team */}
+      {currentRoundId ? (
+        <div className="grid grid-cols-2 gap-3">
+          <AnswerList
+            title={team1Name}
+            accent="text-blue-400"
+            rows={answerGroups.team1}
+          />
+          <AnswerList
+            title={team2Name}
+            accent="text-[var(--aep-red)]"
+            rows={answerGroups.team2}
+          />
+        </div>
+      ) : (
+        <p className="text-xs opacity-50 text-center">Select a round to see audience answers.</p>
+      )}
+    </div>
+  )
+}
+
+function AnswerList({
+  title, accent, rows,
+}: {
+  title: string
+  accent: string
+  rows: Array<{ text: string; count: number }>
+}) {
+  return (
+    <div className="bg-[var(--navy-mid)]/50 rounded-lg p-2">
+      <p className={`text-xs uppercase tracking-widest opacity-70 mb-1 ${accent} truncate`}>{title}</p>
+      {rows.length === 0 ? (
+        <p className="text-xs opacity-40 py-1">No answers yet</p>
+      ) : (
+        <ul className="space-y-1 max-h-40 overflow-y-auto">
+          {rows.map((r) => (
+            <li key={r.text} className="flex items-center justify-between text-sm gap-2">
+              <span className="truncate" title={r.text}>{r.text}</span>
+              {r.count > 1 && (
+                <span className="shrink-0 text-xs bg-[var(--gold)] text-[var(--navy)] rounded-full px-2 py-0.5 font-bold">
+                  ×{r.count}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function countPlayersByTeam(players: AudiencePlayers | null) {
+  if (!players) return { team1: 0, team2: 0 }
+  let t1 = 0
+  let t2 = 0
+  for (const p of Object.values(players)) {
+    if (p.team === 1) t1++
+    else if (p.team === 2) t2++
+  }
+  return { team1: t1, team2: t2 }
+}
+
+function groupAnswersByTeam(answers: Record<string, AudienceAnswer> | null | undefined) {
+  const counts: { team1: Map<string, number>; team2: Map<string, number> } = {
+    team1: new Map(),
+    team2: new Map(),
+  }
+  if (answers) {
+    for (const a of Object.values(answers)) {
+      const key = a.text.trim().toLowerCase()
+      if (!key) continue
+      const bucket = a.team === 1 ? counts.team1 : counts.team2
+      bucket.set(key, (bucket.get(key) || 0) + 1)
+    }
+  }
+  const toSorted = (m: Map<string, number>) =>
+    Array.from(m.entries())
+      .map(([text, count]) => ({ text, count }))
+      .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
+  return { team1: toSorted(counts.team1), team2: toSorted(counts.team2) }
 }
 
 function ScoreControl({
