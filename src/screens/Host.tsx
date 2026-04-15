@@ -77,21 +77,16 @@ export default function Host() {
             <p className="text-sm opacity-50 mb-3">Tap an answer to reveal it on the board</p>
             <div className="space-y-2">
               {currentRound.answers.map((answer, i) => (
-                <button
+                <AnswerRevealTile
                   key={i}
-                  onClick={() => handleRevealAnswer(gameState.currentRound, i, answer.points, gameState)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                    answer.revealed
-                      ? 'bg-[var(--gold)]/20 border border-[var(--gold)] text-[var(--gold)]'
-                      : 'bg-[var(--navy-mid)] hover:bg-[var(--navy-mid)]/80 border border-transparent'
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="font-bungee text-lg w-8">{i + 1}</span>
-                    <span className="text-left font-semibold">{answer.text}</span>
-                  </span>
-                  <span className="font-bungee text-lg">{answer.points} pts</span>
-                </button>
+                  index={i}
+                  text={answer.text}
+                  points={answer.points}
+                  revealed={answer.revealed}
+                  onClick={() =>
+                    handleRevealAnswer(gameState.currentRound, i, answer.points, gameState)
+                  }
+                />
               ))}
             </div>
           </Panel>
@@ -609,6 +604,94 @@ function groupAnswersByTeam(answers: Record<string, AudienceAnswer> | null | und
       .map(([text, count]) => ({ text, count }))
       .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
   return { team1: toSorted(counts.team1), team2: toSorted(counts.team2) }
+}
+
+function AnswerRevealTile({
+  index,
+  text,
+  points,
+  revealed,
+  onClick,
+}: {
+  index: number
+  text: string
+  points: number
+  revealed: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-stretch gap-3 rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] text-left"
+      style={{
+        background: revealed
+          ? 'linear-gradient(180deg, rgba(255,215,0,0.18) 0%, rgba(255,215,0,0.06) 100%)'
+          : 'var(--navy-mid)',
+        boxShadow: revealed
+          ? 'inset 0 0 0 2px var(--gold), 0 0 18px rgba(255,215,0,0.25)'
+          : 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+      }}
+    >
+      {/* Number badge */}
+      <div
+        className="flex items-center justify-center shrink-0"
+        style={{
+          width: 56,
+          background: revealed
+            ? 'linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%)'
+            : 'rgba(0,0,0,0.25)',
+          color: revealed ? 'var(--navy)' : 'var(--gold)',
+          boxShadow: revealed
+            ? 'inset -1px 0 0 rgba(0,0,0,0.2)'
+            : 'inset -1px 0 0 rgba(255,255,255,0.04)',
+        }}
+      >
+        <span
+          className="font-bungee text-2xl leading-none"
+          style={{
+            textShadow: revealed ? 'none' : '0 0 12px rgba(255,215,0,0.4)',
+          }}
+        >
+          {index + 1}
+        </span>
+      </div>
+
+      {/* Answer text */}
+      <div className="flex-1 flex items-center min-w-0 py-3">
+        <span
+          className="font-bungee text-base tracking-wide truncate"
+          style={{ color: revealed ? 'var(--gold)' : 'white' }}
+        >
+          {text}
+        </span>
+        {revealed && (
+          <span
+            className="ml-2 text-xs"
+            style={{ color: 'var(--gold)' }}
+            aria-hidden
+          >
+            ✓
+          </span>
+        )}
+      </div>
+
+      {/* Points pill */}
+      <div className="flex items-center pr-3 shrink-0">
+        <span
+          className="font-bungee text-base px-3 py-1 rounded-full tabular-nums"
+          style={{
+            background: revealed ? 'rgba(10,22,40,0.85)' : 'var(--navy)',
+            color: 'var(--gold)',
+            border: '1px solid rgba(255,215,0,0.4)',
+            minWidth: 64,
+            textAlign: 'center',
+          }}
+        >
+          {points}
+        </span>
+      </div>
+    </button>
+  )
 }
 
 function TeamControlCard({
