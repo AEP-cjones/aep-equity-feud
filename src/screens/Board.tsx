@@ -388,13 +388,15 @@ function MarqueeFrame({ children }: { children: React.ReactNode }) {
   // nHoriz/nVert so every bulb on the outer ring sits directly outside the
   // matching inner-ring bulb (concentric, no drift around the frame).
   const TARGET_SPACING = 54
-  // Side-edge bulbs are inset by SIDE_INSET from the actual stage corners
-  // so the first/last side bulb sits close to the diagonal corner bulb
-  // (small gap) rather than 1/N of the way down the edge (big gap).
-  const SIDE_INSET = 14
-  const nHoriz = dims ? Math.max(4, Math.round(dims.w / TARGET_SPACING) + 1) : 0
+  // Edge bulbs are inset by EDGE_INSET from the actual stage corners on
+  // BOTH axes — so each corner cluster (top-last + diagonal + side-first)
+  // has uniform spacing instead of one tight pair next to a looser pair.
+  const EDGE_INSET = 14
+  const nHoriz = dims
+    ? Math.max(2, Math.round((dims.w - 2 * EDGE_INSET) / TARGET_SPACING) + 1)
+    : 0
   const nVert = dims
-    ? Math.max(2, Math.round((dims.h - 2 * SIDE_INSET) / TARGET_SPACING) + 1)
+    ? Math.max(2, Math.round((dims.h - 2 * EDGE_INSET) / TARGET_SPACING) + 1)
     : 0
 
   return (
@@ -405,8 +407,8 @@ function MarqueeFrame({ children }: { children: React.ReactNode }) {
               the outer ring fires at exactly the same moment as bulb `i`
               on the inner ring — the two concentric bulbs pulse together
               as one "fat" highlight that rotates around the frame. */}
-          <MarqueeRing dims={dims} offset={12} nHoriz={nHoriz} nVert={nVert} sideInset={SIDE_INSET} size={10} loopSeconds={2} />
-          <MarqueeRing dims={dims} offset={28} nHoriz={nHoriz} nVert={nVert} sideInset={SIDE_INSET} size={7} loopSeconds={2} />
+          <MarqueeRing dims={dims} offset={12} nHoriz={nHoriz} nVert={nVert} edgeInset={EDGE_INSET} size={10} loopSeconds={2} />
+          <MarqueeRing dims={dims} offset={28} nHoriz={nHoriz} nVert={nVert} edgeInset={EDGE_INSET} size={7} loopSeconds={2} />
         </>
       )}
       {children}
@@ -434,7 +436,7 @@ function MarqueeRing({
   offset,
   nHoriz,
   nVert,
-  sideInset,
+  edgeInset,
   size,
   loopSeconds,
 }: {
@@ -442,7 +444,7 @@ function MarqueeRing({
   offset: number
   nHoriz: number
   nVert: number
-  sideInset: number
+  edgeInset: number
   size: number
   loopSeconds: number
 }) {
@@ -456,10 +458,13 @@ function MarqueeRing({
   }
 
   const bulbs: Array<{ key: string; style: React.CSSProperties }> = []
+  const horizSpan = dims.w - 2 * edgeInset
+  const vertSpan = dims.h - 2 * edgeInset
 
-  // Top edge — includes both TL and TR corners (on the top-edge line)
+  // Top edge — bulbs span x=edgeInset to x=w-edgeInset (corners pulled in
+  // by edgeInset so the corner cluster has uniform spacing).
   for (let i = 0; i < nHoriz; i++) {
-    const x = (i / (nHoriz - 1)) * dims.w
+    const x = edgeInset + (i / Math.max(1, nHoriz - 1)) * horizSpan
     bulbs.push({
       key: `t${i}`,
       style: { ...bulbBase, top: -offset - half, left: x - half },
@@ -470,14 +475,9 @@ function MarqueeRing({
     key: 'c-tr',
     style: { ...bulbBase, top: -offset - half, right: -offset - half },
   })
-  // Right edge — bulbs span y=sideInset to y=h-sideInset, evenly spaced.
-  // First bulb sits sideInset px below the top corner so the gap between
-  // the diagonal TR corner bulb and the first right bulb is small (close
-  // to mid-edge spacing) instead of one full edge-step. Both rings use
-  // the SAME y positions so they stay concentric.
-  const sideSpan = dims.h - 2 * sideInset
+  // Right edge — bulbs span y=edgeInset to y=h-edgeInset.
   for (let i = 0; i < nVert; i++) {
-    const y = sideInset + (i / Math.max(1, nVert - 1)) * sideSpan
+    const y = edgeInset + (i / Math.max(1, nVert - 1)) * vertSpan
     bulbs.push({
       key: `r${i}`,
       style: { ...bulbBase, right: -offset - half, top: y - half },
@@ -488,9 +488,9 @@ function MarqueeRing({
     key: 'c-br',
     style: { ...bulbBase, bottom: -offset - half, right: -offset - half },
   })
-  // Bottom edge — includes both BR and BL corners, reversed for clockwise
+  // Bottom edge — same horizontal inset, reversed for clockwise flow
   for (let i = nHoriz - 1; i >= 0; i--) {
-    const x = (i / (nHoriz - 1)) * dims.w
+    const x = edgeInset + (i / Math.max(1, nHoriz - 1)) * horizSpan
     bulbs.push({
       key: `b${i}`,
       style: { ...bulbBase, bottom: -offset - half, left: x - half },
@@ -501,9 +501,9 @@ function MarqueeRing({
     key: 'c-bl',
     style: { ...bulbBase, bottom: -offset - half, left: -offset - half },
   })
-  // Left edge — same inset spacing, reversed for clockwise flow
+  // Left edge — same vertical inset, reversed for clockwise flow
   for (let i = nVert - 1; i >= 0; i--) {
-    const y = sideInset + (i / Math.max(1, nVert - 1)) * sideSpan
+    const y = edgeInset + (i / Math.max(1, nVert - 1)) * vertSpan
     bulbs.push({
       key: `l${i}`,
       style: { ...bulbBase, left: -offset - half, top: y - half },
