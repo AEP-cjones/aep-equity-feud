@@ -34,12 +34,8 @@ export default function Host() {
   return (
     <div className="min-h-screen flex flex-col">
       <AepHeader />
+      <Scoreboard gameState={gameState} config={config} />
       <div className="p-4 max-w-3xl mx-auto w-full space-y-4">
-        <h1 className="font-bungee text-2xl text-[var(--gold)] text-center">Host Control Panel</h1>
-
-        {/* Game Status */}
-        <StatusBar gameState={gameState} config={config} />
-
         {/* Team Names */}
         <TeamNameEditor config={config} />
 
@@ -250,7 +246,7 @@ async function handleResetGame() {
   })
 }
 
-function StatusBar({
+function Scoreboard({
   gameState,
   config,
 }: {
@@ -259,22 +255,155 @@ function StatusBar({
 }) {
   return (
     <div
-      className="bg-[var(--navy-light)] rounded-xl p-3 flex items-center justify-between text-sm"
-      style={{ borderTop: '2px solid var(--gold)' }}
+      className="sticky top-0 z-30 w-full"
+      style={{
+        background: 'linear-gradient(180deg, var(--navy-light) 0%, var(--navy) 100%)',
+        borderBottom: '2px solid var(--gold)',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.45)',
+      }}
     >
-      <span>
-        Status: <strong className="text-[var(--gold)]">{gameState.status.toUpperCase()}</strong>
-      </span>
-      <span>
-        Round: <strong>{gameState.currentRound || '—'}</strong>
-      </span>
-      <span>
-        Active: <strong>{gameState.activeTeam === 1 ? config.team1Name : config.team2Name}</strong>
-      </span>
-      <span>
-        Strikes: <strong className="text-[var(--strike-red)]">{gameState.strikes}</strong>
+      <div className="max-w-5xl mx-auto px-4 py-2 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <ScoreboardTeamCard
+          name={config.team1Name}
+          score={gameState.team1Score}
+          accent="blue"
+          active={gameState.activeTeam === 1}
+        />
+
+        <div className="flex flex-col items-center gap-1.5 min-w-[180px]">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.22em] uppercase opacity-60">Round</span>
+            <span
+              className="font-bungee text-sm px-2 py-0.5 rounded"
+              style={{ background: 'var(--navy-mid)', color: 'var(--gold)' }}
+            >
+              {gameState.currentRound || '—'}
+            </span>
+            <StatusPill status={gameState.status} />
+          </div>
+          <StrikeDots strikes={gameState.strikes} />
+          {gameState.roundPoints > 0 && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="opacity-60 tracking-widest uppercase">Round Points</span>
+              <span
+                className="font-bungee px-2 py-0.5 rounded"
+                style={{
+                  background: 'var(--gold)',
+                  color: 'var(--navy)',
+                  boxShadow: '0 0 10px rgba(255,215,0,0.45)',
+                }}
+              >
+                {gameState.roundPoints}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <ScoreboardTeamCard
+          name={config.team2Name}
+          score={gameState.team2Score}
+          accent="red"
+          active={gameState.activeTeam === 2}
+          alignRight
+        />
+      </div>
+    </div>
+  )
+}
+
+function ScoreboardTeamCard({
+  name,
+  score,
+  accent,
+  active,
+  alignRight = false,
+}: {
+  name: string
+  score: number
+  accent: 'blue' | 'red'
+  active: boolean
+  alignRight?: boolean
+}) {
+  const accentColor = accent === 'blue' ? '#60a5fa' : 'var(--aep-red)'
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-xl px-3 py-2 transition-all ${
+        alignRight ? 'flex-row-reverse text-right' : ''
+      }`}
+      style={{
+        background: active
+          ? 'rgba(255,215,0,0.08)'
+          : 'rgba(26,45,74,0.6)',
+        boxShadow: active
+          ? `inset 0 0 0 2px var(--gold), 0 0 18px rgba(255,215,0,0.25)`
+          : `inset 0 0 0 1px ${accent === 'blue' ? 'rgba(96,165,250,0.3)' : 'rgba(200,16,46,0.3)'}`,
+      }}
+    >
+      <div className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'} min-w-0`}>
+        <span
+          className="font-bungee text-xs tracking-[0.14em] uppercase truncate max-w-[180px]"
+          style={{ color: accentColor }}
+        >
+          {name}
+        </span>
+        <span className="text-[10px] opacity-50 tracking-[0.22em] uppercase">
+          {active ? 'Their Turn' : '\u00A0'}
+        </span>
+      </div>
+      <span
+        className="font-bungee text-4xl leading-none tabular-nums"
+        style={{ color: 'var(--gold)', textShadow: '0 2px 10px rgba(255,215,0,0.35)' }}
+      >
+        {score}
       </span>
     </div>
+  )
+}
+
+function StrikeDots({ strikes }: { strikes: number }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {[0, 1, 2].map((i) => {
+        const hit = i < strikes
+        return (
+          <span
+            key={i}
+            className="font-bungee text-lg leading-none w-6 h-6 flex items-center justify-center rounded"
+            style={{
+              color: hit ? 'var(--strike-red)' : 'rgba(255,255,255,0.18)',
+              background: hit ? 'rgba(255,23,68,0.15)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${hit ? 'var(--strike-red)' : 'rgba(255,255,255,0.1)'}`,
+              textShadow: hit ? '0 0 8px rgba(255,23,68,0.8)' : 'none',
+            }}
+          >
+            ✕
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+function StatusPill({ status }: { status: GameState['status'] }) {
+  const color =
+    status === 'steal'
+      ? 'var(--strike-red)'
+      : status === 'final'
+      ? 'var(--gold)'
+      : status === 'playing'
+      ? '#4ade80'
+      : 'rgba(255,255,255,0.5)'
+  return (
+    <span
+      className="text-[10px] tracking-[0.18em] uppercase px-2 py-0.5 rounded font-bungee"
+      style={{
+        color,
+        border: `1px solid ${color}`,
+        background: 'rgba(0,0,0,0.25)',
+      }}
+    >
+      {status}
+    </span>
   )
 }
 
