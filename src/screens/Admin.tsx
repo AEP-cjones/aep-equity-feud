@@ -12,9 +12,11 @@ import type { Round, Answer } from '../types'
 export default function Admin() {
   const config = useConfig()
   const rounds = useRounds()
+  const leads = useLeads()
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [editingRound, setEditingRound] = useState<string | null>(null)
+  const [tab, setTab] = useState<'rounds' | 'leads'>('rounds')
 
   if (!authed) {
     return (
@@ -102,6 +104,7 @@ export default function Admin() {
   }
 
   const roundKeys = Object.keys(rounds || {})
+  const leadCount = leads ? Object.keys(leads).length : 0
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -109,48 +112,134 @@ export default function Admin() {
       <div className="p-4 max-w-3xl mx-auto w-full space-y-4">
         <h1 className="font-bungee text-2xl text-[var(--gold)] text-center">Admin Panel</h1>
 
-        <button
-          onClick={async () => {
-            const id = await createRound({
-              question: 'New Question',
-              answers: [
-                { text: 'Answer 1', points: 40, revealed: false },
-                { text: 'Answer 2', points: 30, revealed: false },
-                { text: 'Answer 3', points: 20, revealed: false },
-                { text: 'Answer 4', points: 10, revealed: false },
-                { text: 'Answer 5', points: 5, revealed: false },
-              ],
-            })
-            setEditingRound(id)
-          }}
-          className="w-full py-3 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bungee hover:bg-[var(--gold-dark)]"
-        >
-          + Add Round
-        </button>
+        <TabBar
+          tab={tab}
+          onChange={setTab}
+          roundCount={roundKeys.length}
+          leadCount={leadCount}
+        />
 
-        {roundKeys.map((key) => (
-          <RoundEditor
-            key={key}
-            roundId={key}
-            round={rounds![key]}
-            isExpanded={editingRound === key}
-            onToggle={() => setEditingRound(editingRound === key ? null : key)}
-            onDelete={async () => {
-              if (confirm(`Delete ${key}?`)) {
-                await deleteRound(key)
-                if (editingRound === key) setEditingRound(null)
-              }
-            }}
-          />
-        ))}
+        {tab === 'rounds' ? (
+          <>
+            <button
+              onClick={async () => {
+                const id = await createRound({
+                  question: 'New Question',
+                  answers: [
+                    { text: 'Answer 1', points: 40, revealed: false },
+                    { text: 'Answer 2', points: 30, revealed: false },
+                    { text: 'Answer 3', points: 20, revealed: false },
+                    { text: 'Answer 4', points: 10, revealed: false },
+                    { text: 'Answer 5', points: 5, revealed: false },
+                  ],
+                })
+                setEditingRound(id)
+              }}
+              className="w-full py-3 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bungee hover:bg-[var(--gold-dark)]"
+            >
+              + Add Round
+            </button>
 
-        {roundKeys.length === 0 && (
-          <p className="text-center opacity-50 py-8">No rounds yet. Add one above.</p>
+            {roundKeys.map((key) => (
+              <RoundEditor
+                key={key}
+                roundId={key}
+                round={rounds![key]}
+                isExpanded={editingRound === key}
+                onToggle={() => setEditingRound(editingRound === key ? null : key)}
+                onDelete={async () => {
+                  if (confirm(`Delete ${key}?`)) {
+                    await deleteRound(key)
+                    if (editingRound === key) setEditingRound(null)
+                  }
+                }}
+              />
+            ))}
+
+            {roundKeys.length === 0 && (
+              <p className="text-center opacity-50 py-8">No rounds yet. Add one above.</p>
+            )}
+          </>
+        ) : (
+          <LeadsSection />
         )}
-
-        <LeadsSection />
       </div>
     </div>
+  )
+}
+
+function TabBar({
+  tab,
+  onChange,
+  roundCount,
+  leadCount,
+}: {
+  tab: 'rounds' | 'leads'
+  onChange: (t: 'rounds' | 'leads') => void
+  roundCount: number
+  leadCount: number
+}) {
+  return (
+    <div
+      className="flex rounded-xl overflow-hidden"
+      style={{
+        background: 'var(--navy-light)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+      }}
+    >
+      <TabButton
+        active={tab === 'rounds'}
+        onClick={() => onChange('rounds')}
+        label="Rounds"
+        count={roundCount}
+      />
+      <TabButton
+        active={tab === 'leads'}
+        onClick={() => onChange('leads')}
+        label="Leads"
+        count={leadCount}
+      />
+    </div>
+  )
+}
+
+function TabButton({
+  active,
+  onClick,
+  label,
+  count,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  count: number
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-1 py-3 px-4 flex items-center justify-center gap-2 font-bungee tracking-[0.18em] uppercase text-sm transition-all relative"
+      style={{
+        background: active ? 'rgba(255,215,0,0.08)' : 'transparent',
+        color: active ? 'var(--gold)' : 'rgba(255,255,255,0.5)',
+        borderBottom: active
+          ? '3px solid var(--gold)'
+          : '3px solid transparent',
+      }}
+    >
+      <span>{label}</span>
+      <span
+        className="text-[11px] px-2 py-0.5 rounded-full tabular-nums"
+        style={{
+          background: active ? 'var(--gold)' : 'rgba(255,255,255,0.08)',
+          color: active ? 'var(--navy)' : 'rgba(255,255,255,0.6)',
+          fontFamily: 'system-ui, sans-serif',
+          letterSpacing: 0,
+        }}
+      >
+        {count}
+      </span>
+    </button>
   )
 }
 
