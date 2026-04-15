@@ -251,19 +251,19 @@ body {
 .host-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 18px;
   align-items: start;
 }
 @media (min-width: 1024px) {
   .host-grid {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    gap: 20px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 24px;
   }
 }
 .host-col {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   min-width: 0;
 }
 

@@ -37,7 +37,7 @@ export default function Host() {
       <Scoreboard gameState={gameState} config={config} />
       <div
         className="mx-auto w-full"
-        style={{ padding: 16, maxWidth: 1152 }}
+        style={{ padding: '20px 24px', maxWidth: 1200 }}
       >
         {/* Steal banner stays full-width, above the grid, when active */}
         {gameState.status === 'steal' && (
@@ -50,33 +50,58 @@ export default function Host() {
           {/* LEFT: round picker, reveal tiles, primary actions */}
           <div className="host-col">
             <Panel title="Round Select">
-              <div className="flex flex-wrap gap-2">
-                {roundKeys.map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => handleSelectRound(key, rounds[key])}
-                    className={`px-4 py-2 rounded-lg font-bold transition-all ${
-                      gameState.currentRound === key
-                        ? 'bg-[var(--gold)] text-[var(--navy)]'
-                        : 'bg-[var(--navy-mid)] hover:bg-[var(--navy-mid)]/80'
-                    }`}
-                  >
-                    {key}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {roundKeys.map((key) => {
+                  const isCurrent = gameState.currentRound === key
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => handleSelectRound(key, rounds[key])}
+                      className="font-bungee rounded-lg transition-all hover:brightness-110 active:scale-[0.98]"
+                      style={{
+                        padding: '10px 18px',
+                        fontSize: 15,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        background: isCurrent
+                          ? 'linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%)'
+                          : 'var(--navy-mid)',
+                        color: isCurrent ? 'var(--navy)' : 'white',
+                        border: `1px solid ${isCurrent ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}`,
+                        boxShadow: isCurrent
+                          ? '0 0 14px rgba(255,215,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4)'
+                          : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                      }}
+                    >
+                      {key}
+                    </button>
+                  )
+                })}
               </div>
               {roundKeys.length === 0 && (
-                <p className="opacity-50">No rounds created. Go to /admin to add rounds.</p>
+                <p style={{ opacity: 0.5 }}>
+                  No rounds created. Go to /admin to add rounds.
+                </p>
               )}
             </Panel>
 
             {currentRound && (
               <Panel title="Reveal Answers">
-                <h4 className="font-bungee text-lg mb-1 text-[var(--gold)]">
+                <h4
+                  className="font-bungee"
+                  style={{
+                    fontSize: 22,
+                    color: 'var(--gold)',
+                    marginBottom: 4,
+                    lineHeight: 1.2,
+                  }}
+                >
                   {currentRound.question}
                 </h4>
-                <p className="text-sm opacity-50 mb-3">Tap an answer to reveal it on the board</p>
-                <div className="space-y-2">
+                <p style={{ fontSize: 13, opacity: 0.55, marginBottom: 14 }}>
+                  Tap an answer to reveal it on the board
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {currentRound.answers.map((answer, i) => (
                     <AnswerRevealTile
                       key={i}
@@ -93,61 +118,106 @@ export default function Host() {
               </Panel>
             )}
 
-            <Panel title="Actions" bodyClassName="space-y-3">
-              <button
-                onClick={() => handleStrike(gameState)}
-                disabled={gameState.strikes >= 3}
-                className="w-full py-4 bg-[var(--strike-red)] hover:bg-[var(--strike-red)]/80 disabled:opacity-30 rounded-xl font-bungee text-2xl transition-all"
-              >
-                STRIKE! ({gameState.strikes}/3)
-              </button>
+            <Panel title="Actions">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <button
+                  onClick={() => handleStrike(gameState)}
+                  disabled={gameState.strikes >= 3}
+                  className="font-bungee rounded-xl transition-all hover:brightness-110 active:scale-[0.99]"
+                  style={{
+                    padding: '18px 16px',
+                    fontSize: 26,
+                    letterSpacing: '0.06em',
+                    background: 'var(--strike-red)',
+                    color: 'white',
+                    opacity: gameState.strikes >= 3 ? 0.3 : 1,
+                    cursor: gameState.strikes >= 3 ? 'not-allowed' : 'pointer',
+                    boxShadow:
+                      '0 6px 18px rgba(255,23,68,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                  }}
+                >
+                  STRIKE! ({gameState.strikes}/3)
+                </button>
 
-              {gameState.roundPoints > 0 && (
-                <div className="flex gap-2">
+                {gameState.roundPoints > 0 && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => {
+                        updateGameState({
+                          team1Score: gameState.team1Score + gameState.roundPoints,
+                          roundPoints: 0,
+                        })
+                      }}
+                      className="font-bungee rounded-lg transition-all hover:brightness-110"
+                      style={{
+                        flex: 1,
+                        padding: '12px 14px',
+                        fontSize: 14,
+                        background: '#2563eb',
+                        color: 'white',
+                      }}
+                    >
+                      Award {gameState.roundPoints} to {config.team1Name}
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateGameState({
+                          team2Score: gameState.team2Score + gameState.roundPoints,
+                          roundPoints: 0,
+                        })
+                      }}
+                      className="font-bungee rounded-lg transition-all hover:brightness-110"
+                      style={{
+                        flex: 1,
+                        padding: '12px 14px',
+                        fontSize: 14,
+                        background: 'var(--aep-red)',
+                        color: 'white',
+                      }}
+                    >
+                      Award {gameState.roundPoints} to {config.team2Name}
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => {
-                      updateGameState({
-                        team1Score: gameState.team1Score + gameState.roundPoints,
-                        roundPoints: 0,
-                      })
+                    onClick={() => updateGameState({ status: 'title' })}
+                    className="rounded-lg transition-all hover:brightness-110"
+                    style={{
+                      padding: '10px 16px',
+                      fontSize: 14,
+                      background: 'var(--navy-mid)',
+                      color: 'white',
                     }}
-                    className="flex-1 py-3 bg-blue-600 rounded-lg font-bungee hover:bg-blue-500"
                   >
-                    Award {gameState.roundPoints} to {config.team1Name}
+                    Title Screen
                   </button>
                   <button
-                    onClick={() => {
-                      updateGameState({
-                        team2Score: gameState.team2Score + gameState.roundPoints,
-                        roundPoints: 0,
-                      })
+                    onClick={() => updateGameState({ status: 'final' })}
+                    className="font-bungee rounded-lg transition-all hover:brightness-110"
+                    style={{
+                      padding: '10px 16px',
+                      fontSize: 14,
+                      background: 'var(--gold)',
+                      color: 'var(--navy)',
                     }}
-                    className="flex-1 py-3 bg-[var(--aep-red)] rounded-lg font-bungee hover:bg-red-600"
                   >
-                    Award {gameState.roundPoints} to {config.team2Name}
+                    Final Scores
+                  </button>
+                  <button
+                    onClick={() => handleResetGame()}
+                    className="rounded-lg transition-all hover:brightness-110"
+                    style={{
+                      padding: '10px 16px',
+                      fontSize: 14,
+                      background: '#7f1d1d',
+                      color: 'white',
+                    }}
+                  >
+                    Reset Game
                   </button>
                 </div>
-              )}
-
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => updateGameState({ status: 'title' })}
-                  className="px-4 py-2 bg-[var(--navy-mid)] rounded-lg hover:bg-[var(--navy-mid)]/80"
-                >
-                  Title Screen
-                </button>
-                <button
-                  onClick={() => updateGameState({ status: 'final' })}
-                  className="px-4 py-2 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bold hover:bg-[var(--gold-dark)]"
-                >
-                  Final Scores
-                </button>
-                <button
-                  onClick={() => handleResetGame()}
-                  className="px-4 py-2 bg-red-900 rounded-lg hover:bg-red-800"
-                >
-                  Reset Game
-                </button>
               </div>
             </Panel>
           </div>
@@ -577,40 +647,77 @@ function AudiencePanel({
           Reset audience
         </button>
       }
-      bodyClassName="space-y-3"
     >
       {/* Per-team counts */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[var(--navy-mid)] rounded-lg p-3 text-center border border-blue-400/30">
-          <p className="text-xs opacity-60 truncate">{team1Name}</p>
-          <p className="font-bungee text-3xl text-blue-400">{teamCounts.team1}</p>
-          <p className="text-xs opacity-50">fans</p>
-        </div>
-        <div className="bg-[var(--navy-mid)] rounded-lg p-3 text-center border border-[var(--aep-red)]/30">
-          <p className="text-xs opacity-60 truncate">{team2Name}</p>
-          <p className="font-bungee text-3xl text-[var(--aep-red)]">{teamCounts.team2}</p>
-          <p className="text-xs opacity-50">fans</p>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <AudienceCountCard name={team1Name} count={teamCounts.team1} accent="#60a5fa" />
+        <AudienceCountCard name={team2Name} count={teamCounts.team2} accent="var(--aep-red)" />
       </div>
 
       {/* Current round answers, grouped by team */}
       {currentRoundId ? (
-        <div className="grid grid-cols-2 gap-3">
-          <AnswerList
-            title={team1Name}
-            accent="text-blue-400"
-            rows={answerGroups.team1}
-          />
-          <AnswerList
-            title={team2Name}
-            accent="text-[var(--aep-red)]"
-            rows={answerGroups.team2}
-          />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 12,
+            marginTop: 12,
+          }}
+        >
+          <AnswerList title={team1Name} accent="#60a5fa" rows={answerGroups.team1} />
+          <AnswerList title={team2Name} accent="var(--aep-red)" rows={answerGroups.team2} />
         </div>
       ) : (
-        <p className="text-xs opacity-50 text-center">Select a round to see audience answers.</p>
+        <p style={{ fontSize: 12, opacity: 0.5, textAlign: 'center', marginTop: 12 }}>
+          Select a round to see audience answers.
+        </p>
       )}
     </Panel>
+  )
+}
+
+function AudienceCountCard({
+  name,
+  count,
+  accent,
+}: {
+  name: string
+  count: number
+  accent: string
+}) {
+  return (
+    <div
+      style={{
+        background: 'var(--navy-mid)',
+        borderRadius: 10,
+        padding: '12px 10px',
+        textAlign: 'center',
+        border: `1px solid ${accent === '#60a5fa' ? 'rgba(96,165,250,0.3)' : 'rgba(200,16,46,0.3)'}`,
+      }}
+    >
+      <p
+        style={{
+          fontSize: 11,
+          opacity: 0.7,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {name}
+      </p>
+      <p
+        className="font-bungee tabular-nums"
+        style={{ fontSize: 32, lineHeight: 1.1, color: accent, marginTop: 4 }}
+      >
+        {count}
+      </p>
+      <p style={{ fontSize: 11, opacity: 0.5, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+        fans
+      </p>
+    </div>
   )
 }
 
@@ -622,17 +729,61 @@ function AnswerList({
   rows: Array<{ text: string; count: number }>
 }) {
   return (
-    <div className="bg-[var(--navy-mid)]/50 rounded-lg p-2">
-      <p className={`text-xs uppercase tracking-widest opacity-70 mb-1 ${accent} truncate`}>{title}</p>
+    <div
+      style={{
+        background: 'rgba(26,45,74,0.5)',
+        borderRadius: 10,
+        padding: 10,
+      }}
+    >
+      <p
+        style={{
+          fontSize: 11,
+          textTransform: 'uppercase',
+          letterSpacing: '0.18em',
+          opacity: 0.8,
+          marginBottom: 6,
+          color: accent,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {title}
+      </p>
       {rows.length === 0 ? (
-        <p className="text-xs opacity-40 py-1">No answers yet</p>
+        <p style={{ fontSize: 12, opacity: 0.4, padding: '4px 0' }}>No answers yet</p>
       ) : (
-        <ul className="space-y-1 max-h-40 overflow-y-auto">
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 160, overflowY: 'auto' }}>
           {rows.map((r) => (
-            <li key={r.text} className="flex items-center justify-between text-sm gap-2">
-              <span className="truncate" title={r.text}>{r.text}</span>
+            <li
+              key={r.text}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                fontSize: 13,
+              }}
+            >
+              <span
+                title={r.text}
+                style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
+                {r.text}
+              </span>
               {r.count > 1 && (
-                <span className="shrink-0 text-xs bg-[var(--gold)] text-[var(--navy)] rounded-full px-2 py-0.5 font-bold">
+                <span
+                  className="font-bungee"
+                  style={{
+                    flexShrink: 0,
+                    fontSize: 11,
+                    background: 'var(--gold)',
+                    color: 'var(--navy)',
+                    borderRadius: 999,
+                    padding: '2px 8px',
+                  }}
+                >
                   ×{r.count}
                 </span>
               )}
@@ -691,21 +842,27 @@ function AnswerRevealTile({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-stretch gap-3 rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] text-left"
+      className="w-full rounded-xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] text-left"
       style={{
+        display: 'flex',
+        alignItems: 'stretch',
         background: revealed
           ? 'linear-gradient(180deg, rgba(255,215,0,0.18) 0%, rgba(255,215,0,0.06) 100%)'
           : 'var(--navy-mid)',
         boxShadow: revealed
           ? 'inset 0 0 0 2px var(--gold), 0 0 18px rgba(255,215,0,0.25)'
           : 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+        minHeight: 60,
       }}
     >
       {/* Number badge */}
       <div
-        className="flex items-center justify-center shrink-0"
         style={{
-          width: 56,
+          width: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
           background: revealed
             ? 'linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%)'
             : 'rgba(0,0,0,0.25)',
@@ -716,8 +873,10 @@ function AnswerRevealTile({
         }}
       >
         <span
-          className="font-bungee text-2xl leading-none"
+          className="font-bungee"
           style={{
+            fontSize: 28,
+            lineHeight: 1,
             textShadow: revealed ? 'none' : '0 0 12px rgba(255,215,0,0.4)',
           }}
         >
@@ -726,17 +885,31 @@ function AnswerRevealTile({
       </div>
 
       {/* Answer text */}
-      <div className="flex-1 flex items-center min-w-0 py-3">
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          minWidth: 0,
+          padding: '12px 16px',
+        }}
+      >
         <span
-          className="font-bungee text-base tracking-wide truncate"
-          style={{ color: revealed ? 'var(--gold)' : 'white' }}
+          className="font-bungee"
+          style={{
+            fontSize: 18,
+            letterSpacing: '0.04em',
+            color: revealed ? 'var(--gold)' : 'white',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
         >
           {text}
         </span>
         {revealed && (
           <span
-            className="ml-2 text-xs"
-            style={{ color: 'var(--gold)' }}
+            style={{ marginLeft: 8, fontSize: 16, color: 'var(--gold)' }}
             aria-hidden
           >
             ✓
@@ -745,14 +918,24 @@ function AnswerRevealTile({
       </div>
 
       {/* Points pill */}
-      <div className="flex items-center pr-3 shrink-0">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          paddingRight: 14,
+          flexShrink: 0,
+        }}
+      >
         <span
-          className="font-bungee text-base px-3 py-1 rounded-full tabular-nums"
+          className="font-bungee tabular-nums"
           style={{
+            fontSize: 18,
+            padding: '6px 14px',
+            borderRadius: 999,
             background: revealed ? 'rgba(10,22,40,0.85)' : 'var(--navy)',
             color: 'var(--gold)',
             border: '1px solid rgba(255,215,0,0.4)',
-            minWidth: 64,
+            minWidth: 70,
             textAlign: 'center',
           }}
         >
@@ -795,37 +978,56 @@ function TeamControlCard({
       {/* Tap header to set active */}
       <button
         onClick={onActivate}
-        className="w-full px-3 py-2 flex items-center justify-between hover:brightness-125 transition-all"
+        className="w-full hover:brightness-125 transition-all text-center"
         style={{
+          padding: '10px 12px',
           background: `linear-gradient(180deg, ${accentColor} 0%, color-mix(in srgb, ${accentColor} 65%, black) 100%)`,
           color: accent === 'blue' ? '#0a1628' : 'white',
         }}
       >
-        <span className="font-bungee text-sm tracking-[0.12em] uppercase truncate">
+        <div
+          className="font-bungee uppercase"
+          style={{
+            fontSize: 15,
+            letterSpacing: '0.10em',
+            lineHeight: 1.1,
+          }}
+        >
           {name}
-        </span>
-        {active ? (
-          <span className="text-[10px] tracking-[0.22em] uppercase font-bungee opacity-80">
-            Their Turn
-          </span>
-        ) : (
-          <span className="text-[10px] tracking-[0.18em] uppercase opacity-70">
-            Tap to activate
-          </span>
-        )}
+        </div>
+        <div
+          className="font-bungee uppercase"
+          style={{
+            fontSize: 10,
+            letterSpacing: '0.22em',
+            opacity: active ? 0.9 : 0.75,
+            marginTop: 2,
+          }}
+        >
+          {active ? '★ Their Turn' : 'Tap to activate'}
+        </div>
       </button>
 
-      <div className="px-3 py-3 text-center">
+      <div style={{ padding: '14px 12px 12px 12px', textAlign: 'center' }}>
         <p
-          className="font-bungee text-4xl tabular-nums leading-none"
+          className="font-bungee tabular-nums"
           style={{
+            fontSize: 44,
+            lineHeight: 1,
             color: 'var(--gold)',
             textShadow: '0 2px 10px rgba(255,215,0,0.35)',
           }}
         >
           {score}
         </p>
-        <div className="flex gap-1 justify-center mt-3">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 6,
+            marginTop: 12,
+          }}
+        >
           <StepperButton sign="-" onClick={() => onAdd(-10)}>−10</StepperButton>
           <StepperButton sign="-" onClick={() => onAdd(-5)}>−5</StepperButton>
           <StepperButton sign="+" onClick={() => onAdd(5)}>+5</StepperButton>
@@ -845,18 +1047,23 @@ function StepperButton({
   onClick: () => void
   children: React.ReactNode
 }) {
-  const base =
-    sign === '+'
-      ? 'bg-green-900/60 hover:bg-green-800 border-green-700/50'
-      : 'bg-red-900/60 hover:bg-red-800 border-red-700/50'
+  const isPlus = sign === '+'
   return (
     <button
       onClick={(e) => {
         e.stopPropagation()
         onClick()
       }}
-      className={`px-3 py-1.5 rounded-md text-sm font-bungee tracking-wider border ${base} transition-all active:scale-95`}
-      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }}
+      className="rounded-md font-bungee transition-all active:scale-95 hover:brightness-125"
+      style={{
+        padding: '8px 10px',
+        fontSize: 14,
+        letterSpacing: '0.05em',
+        background: isPlus ? 'rgba(22,101,52,0.55)' : 'rgba(127,29,29,0.55)',
+        border: `1px solid ${isPlus ? 'rgba(74,222,128,0.45)' : 'rgba(248,113,113,0.45)'}`,
+        color: 'white',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+      }}
     >
       {children}
     </button>

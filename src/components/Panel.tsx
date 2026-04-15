@@ -37,19 +37,27 @@ export default function Panel({
       }}
     >
       {(title || action) && (
-        <header className="flex items-center justify-between px-4 pt-3 pb-2">
+        <header
+          className="flex items-center justify-between"
+          style={{ padding: '14px 18px 10px 18px' }}
+        >
           {title ? (
             <h3
-              className="font-bungee text-xs tracking-[0.18em] uppercase flex items-center gap-2"
-              style={{ color: accentColor }}
+              className="font-bungee uppercase flex items-center"
+              style={{
+                color: accentColor,
+                fontSize: 15,
+                letterSpacing: '0.16em',
+                gap: 10,
+              }}
             >
               <span
                 className="inline-block rounded-full"
                 style={{
-                  width: 7,
-                  height: 7,
+                  width: 9,
+                  height: 9,
                   background: accentColor,
-                  boxShadow: `0 0 8px ${accentColor}`,
+                  boxShadow: `0 0 10px ${accentColor}`,
                 }}
               />
               {title}
@@ -60,7 +68,12 @@ export default function Panel({
           {action}
         </header>
       )}
-      <div className={`px-4 pb-4 ${title || action ? '' : 'pt-4'} ${bodyClassName}`}>
+      <div
+        className={bodyClassName}
+        style={{
+          padding: title || action ? '0 18px 18px 18px' : 18,
+        }}
+      >
         {children}
       </div>
     </section>

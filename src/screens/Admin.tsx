@@ -306,7 +306,9 @@ function LeadsSection() {
   const leads = useLeads()
   const config = useConfig()
   const rows = leads
-    ? Object.values(leads).sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0))
+    ? Object.values(leads).sort(
+        (a, b) => parseTs(b.submittedAt) - parseTs(a.submittedAt),
+      )
     : []
   const count = rows.length
   const team1Name = config?.team1Name || 'Team 1'
@@ -462,9 +464,16 @@ function TeamChip({
   )
 }
 
-function relativeTime(ts?: number | null): string {
-  if (!ts) return '—'
-  const diff = Date.now() - ts
+function parseTs(ts?: string | null): number {
+  if (!ts) return 0
+  const t = Date.parse(ts)
+  return Number.isFinite(t) ? t : 0
+}
+
+function relativeTime(ts?: string | null): string {
+  const t = parseTs(ts)
+  if (!t) return '—'
+  const diff = Date.now() - t
   const sec = Math.floor(diff / 1000)
   if (sec < 60) return 'just now'
   const min = Math.floor(sec / 60)
@@ -473,7 +482,7 @@ function relativeTime(ts?: number | null): string {
   if (hr < 24) return `${hr} hr ago`
   const day = Math.floor(hr / 24)
   if (day < 30) return `${day} day${day === 1 ? '' : 's'} ago`
-  return new Date(ts).toLocaleDateString()
+  return new Date(t).toLocaleDateString()
 }
 
 function SaveStatus({
