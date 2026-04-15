@@ -34,7 +34,7 @@ export default function Board() {
   return (
     <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
-      <div className="flex-1 flex flex-col px-6 pb-6 relative" style={{ paddingTop: '3rem' }}>
+      <div className="flex-1 flex flex-col px-6 pb-6 relative" style={{ paddingTop: '1.75rem' }}>
         <StrikeOverlay strikes={gameState.strikes} />
         <RoundIntroSplash roundId={gameState.currentRound} round={currentRound} />
         <StealFailedOverlay
@@ -49,7 +49,7 @@ export default function Board() {
             stealingSide={gameState.activeTeam === 1 ? 'right' : 'left'}
           />
         ) : (
-          <div className="text-center" style={{ marginBottom: '2.5rem' }}>
+          <div className="text-center" style={{ marginBottom: '3.75rem' }}>
             <p className="font-bungee text-sm tracking-widest text-white/30 tagline-pulse" style={{ marginBottom: '0.5rem' }}>
               SURVEY SAYS…
             </p>
@@ -93,9 +93,10 @@ export default function Board() {
           </div>
         </div>
 
-        {/* Round Points — gold pill. Large top margin keeps it clear of the
-            outer marquee ring (bulb center 28px below stage + ~16px glow). */}
-        <div className="text-center" style={{ marginTop: '3.5rem', marginBottom: '0.75rem' }}>
+        {/* Round Points — gold pill. Generous top margin keeps it clear of
+            the outer marquee ring (bulb center 28px below stage + ~16px glow)
+            and gives breathing room before the score band. */}
+        <div className="text-center" style={{ marginTop: '5rem', marginBottom: '0.75rem' }}>
           <RoundPointsPill value={gameState.roundPoints} />
         </div>
 
@@ -281,7 +282,7 @@ function StealBanner({
 }) {
   const accent = stealingSide === 'left' ? 'text-blue-400 team-glow-blue' : 'text-[var(--aep-red)] team-glow-red'
   return (
-    <div className="text-center" style={{ marginBottom: '2.5rem' }}>
+    <div className="text-center" style={{ marginBottom: '3.75rem' }}>
       <p className="font-bungee text-sm tracking-widest text-white/40 tagline-pulse" style={{ marginBottom: '0.5rem' }}>
         ⚡ STEAL ⚡
       </p>
