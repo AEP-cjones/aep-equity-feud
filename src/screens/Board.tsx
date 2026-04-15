@@ -29,18 +29,18 @@ export default function Board() {
   return (
     <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
-      <div className="flex-1 flex flex-col px-6 pt-16 pb-6 relative">
+      <div className="flex-1 flex flex-col px-6 pb-6 relative" style={{ paddingTop: '3rem' }}>
         <StrikeOverlay strikes={gameState.strikes} />
 
         {/* Question */}
-        <div className="text-center mb-2">
+        <div className="text-center" style={{ marginBottom: '2.5rem' }}>
           <h2 className="font-bungee text-4xl text-[var(--gold)] title-glow">
             {currentRound?.question || 'Waiting for round...'}
           </h2>
         </div>
 
-        {/* Answer Board */}
-        <div className="flex-1 flex items-center justify-center">
+        {/* Answer Board — sticks just below the question, not vertically centered */}
+        <div className="flex-1 flex items-start justify-center">
           <div className="w-full max-w-4xl">
             {currentRound?.answers ? (
               <div className="grid grid-cols-1 gap-3">
@@ -55,7 +55,7 @@ export default function Board() {
         </div>
 
         {/* Round Points */}
-        <div className="text-center my-6">
+        <div className="text-center" style={{ marginTop: '2rem', marginBottom: '0.75rem' }}>
           <span className="font-bungee text-2xl text-white opacity-60">Round Points: </span>
           <span className="font-bungee text-3xl text-[var(--gold)]">{gameState.roundPoints}</span>
         </div>
