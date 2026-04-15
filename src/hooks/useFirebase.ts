@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { dbRef, onValue, set, update, get, remove } from '../firebase'
-import type { GameState, GameConfig, Rounds, Round } from '../types'
+import type {
+  GameState, GameConfig, Rounds, Round,
+  AudiencePlayers, AudienceAnswersByRound, AudiencePlayer,
+  AudienceAnswer, Lead, Leads,
+} from '../types'
 
 export function useGameState() {
   const [gameState, setGameState] = useState<GameState | null>(null)
@@ -88,4 +92,92 @@ export async function createRound(round: Round): Promise<string> {
   const id = `round${count + 1}`
   await set(dbRef(`rounds/${id}`), round)
   return id
+}
+
+// ─── Audience (QR-code mobile players) ────────────────────────────────
+
+export function useAudiencePlayers() {
+  const [players, setPlayers] = useState<AudiencePlayers | null>(null)
+  useEffect(() => {
+    const unsub = onValue(dbRef('players'), (snap) => setPlayers(snap.val()))
+    return unsub
+  }, [])
+  return players
+}
+
+export function useAudiencePlayer(playerId: string | null) {
+  const [player, setPlayer] = useState<AudiencePlayer | null>(null)
+  useEffect(() => {
+    if (!playerId) {
+      setPlayer(null)
+      return
+    }
+    const unsub = onValue(dbRef(`players/${playerId}`), (snap) => setPlayer(snap.val()))
+    return unsub
+  }, [playerId])
+  return player
+}
+
+export function useAudienceAnswersForRound(roundId: string | null | undefined) {
+  const [answers, setAnswers] = useState<Record<string, AudienceAnswer> | null>(null)
+  useEffect(() => {
+    if (!roundId) {
+      setAnswers(null)
+      return
+    }
+    const unsub = onValue(dbRef(`audienceAnswers/${roundId}`), (snap) => setAnswers(snap.val()))
+    return unsub
+  }, [roundId])
+  return answers
+}
+
+export function useAllAudienceAnswers() {
+  const [all, setAll] = useState<AudienceAnswersByRound | null>(null)
+  useEffect(() => {
+    const unsub = onValue(dbRef('audienceAnswers'), (snap) => setAll(snap.val()))
+    return unsub
+  }, [])
+  return all
+}
+
+export function useLeads() {
+  const [leads, setLeads] = useState<Leads | null>(null)
+  useEffect(() => {
+    const unsub = onValue(dbRef('leads'), (snap) => setLeads(snap.val()))
+    return unsub
+  }, [])
+  return leads
+}
+
+export async function joinAudience(playerId: string, team: 1 | 2) {
+  await set(dbRef(`players/${playerId}`), {
+    team,
+    joinedAt: new Date().toISOString(),
+  } satisfies AudiencePlayer)
+}
+
+export async function submitAudienceAnswer(
+  playerId: string,
+  roundId: string,
+  team: 1 | 2,
+  text: string,
+) {
+  await set(dbRef(`audienceAnswers/${roundId}/${playerId}`), {
+    text: text.trim(),
+    team,
+    submittedAt: new Date().toISOString(),
+  } satisfies AudienceAnswer)
+}
+
+export async function submitLead(playerId: string, lead: Omit<Lead, 'submittedAt'>) {
+  await set(dbRef(`leads/${playerId}`), {
+    ...lead,
+    submittedAt: new Date().toISOString(),
+  } satisfies Lead)
+}
+
+export async function resetAudience() {
+  await remove(dbRef('players'))
+  await remove(dbRef('audienceAnswers'))
+  await remove(dbRef('leads'))
 }

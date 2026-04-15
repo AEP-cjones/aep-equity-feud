@@ -1,3 +1,4 @@
+import { QRCodeSVG } from 'qrcode.react'
 import { useGameState, useConfig, useRounds } from '../hooks/useFirebase'
 import AepHeader from '../components/AepHeader'
 import AnswerCard from '../components/AnswerCard'
@@ -89,6 +90,7 @@ export default function Board() {
 }
 
 function TitleScreen({ config }: { config: { team1Name: string; team2Name: string } }) {
+  const playUrl = typeof window !== 'undefined' ? `${window.location.origin}/play` : '/play'
   return (
     <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
@@ -105,6 +107,17 @@ function TitleScreen({ config }: { config: { team1Name: string; team2Name: strin
           <span className="text-blue-400 team-glow-blue">{config.team1Name}</span>
           <span className="text-white/30 text-4xl">VS</span>
           <span className="text-[var(--aep-red)] team-glow-red">{config.team2Name}</span>
+        </div>
+      </div>
+
+      {/* Floating QR code — bottom-right of title screen */}
+      <div
+        style={{ position: 'absolute', right: 40, bottom: 40 }}
+        className="flex flex-col items-center gap-3"
+      >
+        <p className="font-bungee text-sm tracking-widest text-white/60 tagline-pulse">📱 SCAN TO PLAY</p>
+        <div className="bg-white p-3 rounded-2xl" style={{ boxShadow: '0 0 30px rgba(255,255,255,0.15)' }}>
+          <QRCodeSVG value={playUrl} size={160} />
         </div>
       </div>
     </div>

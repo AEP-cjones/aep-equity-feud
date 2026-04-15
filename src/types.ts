@@ -44,3 +44,39 @@ export const DEFAULT_GAME_STATE: GameState = {
   roundPoints: 0,
   activeTeam: 1,
 }
+
+// ─── Audience (QR-code mobile players) ────────────────────────────────
+export interface AudiencePlayer {
+  team: 1 | 2
+  joinedAt: string
+}
+
+export interface AudienceAnswer {
+  text: string
+  team: 1 | 2
+  submittedAt: string
+}
+
+export interface Lead {
+  firstName: string
+  lastName: string
+  email: string
+  company?: string
+  phone?: string
+  team?: 1 | 2
+  submittedAt: string
+}
+
+export interface AudiencePlayers {
+  [playerId: string]: AudiencePlayer
+}
+
+export interface AudienceAnswersByRound {
+  [roundId: string]: {
+    [playerId: string]: AudienceAnswer
+  }
+}
+
+export interface Leads {
+  [playerId: string]: Lead
+}
