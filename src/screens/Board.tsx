@@ -27,14 +27,14 @@ export default function Board() {
   const currentRound = rounds?.[gameState.currentRound]
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
-      <div className="flex-1 flex flex-col p-6 relative">
+      <div className="flex-1 flex flex-col px-6 pt-10 pb-6 relative">
         <StrikeOverlay strikes={gameState.strikes} />
 
         {/* Question */}
-        <div className="text-center mb-6">
-          <h2 className="font-bungee text-4xl text-[var(--gold)] mb-2">
+        <div className="text-center mb-8">
+          <h2 className="font-bungee text-4xl text-[var(--gold)] title-glow">
             {currentRound?.question || 'Waiting for round...'}
           </h2>
         </div>
@@ -55,30 +55,32 @@ export default function Board() {
         </div>
 
         {/* Round Points */}
-        <div className="text-center my-4">
+        <div className="text-center my-6">
           <span className="font-bungee text-2xl text-white opacity-60">Round Points: </span>
           <span className="font-bungee text-3xl text-[var(--gold)]">{gameState.roundPoints}</span>
         </div>
 
-        {/* Scores */}
-        <div className="flex justify-between items-end px-8">
+        {/* Scores row — centered band with owl between the two score cards */}
+        <div className="flex items-center justify-center gap-12 self-center">
           <TeamScore
             name={config.team1Name}
             score={gameState.team1Score}
             active={gameState.activeTeam === 1}
+            side="left"
           />
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center shrink-0">
             <img
               src="/Game_Show_Owl.webp"
               alt="Equity Family Feud Owl"
               className="owl-idle object-contain"
-              style={{ width: 220, height: 220, filter: 'drop-shadow(0 0 40px rgba(255,200,50,0.45)) drop-shadow(0 0 80px rgba(172,34,40,0.35))' }}
+              style={{ width: 180, height: 180, filter: 'drop-shadow(0 0 40px rgba(255,200,50,0.45)) drop-shadow(0 0 80px rgba(172,34,40,0.35))' }}
             />
           </div>
           <TeamScore
             name={config.team2Name}
             score={gameState.team2Score}
             active={gameState.activeTeam === 2}
+            side="right"
           />
         </div>
       </div>
@@ -90,16 +92,16 @@ function TitleScreen({ config }: { config: { team1Name: string; team2Name: strin
   return (
     <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
-      <div className="flex-1 flex flex-col items-center pt-6 gap-1">
+      <div className="flex-1 flex flex-col items-center pt-16 pb-10">
         <img
           src="/Game_Show_Owl.webp"
           alt="Equity Family Feud Owl"
           className="owl-idle object-contain"
           style={{ width: 480, height: 380, filter: 'drop-shadow(0 0 60px rgba(255,200,50,0.5)) drop-shadow(0 0 100px rgba(172,34,40,0.4))' }}
         />
-        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow -mt-4">EQUITY FAMILY FEUD</h1>
-        <p className="font-bungee text-xl tracking-widest text-white/30 tagline-pulse">SURVEY SAYS...</p>
-        <div className="flex gap-10 text-5xl font-bungee items-center mt-2">
+        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow mt-2">EQUITY FAMILY FEUD</h1>
+        <p className="font-bungee text-xl tracking-widest text-white/30 tagline-pulse my-8">SURVEY SAYS...</p>
+        <div className="flex gap-10 text-5xl font-bungee items-center">
           <span className="text-blue-400 team-glow-blue">{config.team1Name}</span>
           <span className="text-white/30 text-4xl">VS</span>
           <span className="text-[var(--aep-red)] team-glow-red">{config.team2Name}</span>
@@ -163,19 +165,24 @@ function TeamScore({
   name,
   score,
   active,
+  side,
 }: {
   name: string
   score: number
   active: boolean
+  side: 'left' | 'right'
 }) {
+  const accent = side === 'left' ? 'text-blue-400 team-glow-blue' : 'text-[var(--aep-red)] team-glow-red'
   return (
     <div
-      className={`text-center p-4 rounded-xl transition-all ${
-        active ? 'bg-[var(--navy-light)] ring-2 ring-[var(--gold)] scale-105' : 'opacity-70'
+      className={`shrink-0 basis-[360px] text-center px-6 py-5 rounded-2xl border-2 transition-all ${
+        active
+          ? 'bg-[var(--navy-light)] border-[var(--gold)] scale-105 shadow-[0_0_30px_rgba(255,215,0,0.4)]'
+          : 'bg-[var(--navy-light)]/60 border-white/10 opacity-80'
       }`}
     >
-      <p className="font-bungee text-xl mb-1 truncate max-w-[200px]">{name}</p>
-      <p className="font-bungee text-5xl text-[var(--gold)]">{score}</p>
+      <p className={`font-bungee text-2xl mb-2 truncate ${accent}`}>{name}</p>
+      <p className="font-bungee text-6xl text-[var(--gold)] title-glow">{score}</p>
     </div>
   )
 }
