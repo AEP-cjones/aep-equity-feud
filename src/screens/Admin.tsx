@@ -304,8 +304,13 @@ function TabButton({
 
 function LeadsSection() {
   const leads = useLeads()
-  const rows = leads ? Object.values(leads) : []
+  const config = useConfig()
+  const rows = leads
+    ? Object.values(leads).sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0))
+    : []
   const count = rows.length
+  const team1Name = config?.team1Name || 'Team 1'
+  const team2Name = config?.team2Name || 'Team 2'
 
   return (
     <Panel
@@ -349,25 +354,66 @@ function LeadsSection() {
       {count === 0 ? (
         <p className="text-sm opacity-50 text-center py-4">No leads collected yet.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs opacity-60 uppercase tracking-widest">
+        <div className="overflow-x-auto -mx-4">
+          <table className="w-full text-sm border-separate" style={{ borderSpacing: 0 }}>
+            <thead>
               <tr>
-                <th className="text-left py-2 pr-3">Name</th>
-                <th className="text-left py-2 pr-3">Email</th>
-                <th className="text-left py-2 pr-3">Company</th>
-                <th className="text-left py-2 pr-3">Phone</th>
-                <th className="text-left py-2 pr-3">Team</th>
+                {['Name', 'Email', 'Company', 'Phone', 'Team', 'Submitted'].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left font-bungee tracking-[0.16em] uppercase"
+                    style={{
+                      padding: '10px 12px',
+                      fontSize: 10,
+                      color: 'var(--gold)',
+                      background: 'rgba(255,215,0,0.06)',
+                      borderBottom: '1px solid rgba(255,215,0,0.25)',
+                      position: 'sticky',
+                      top: 0,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className="border-t border-white/5">
-                  <td className="py-2 pr-3">{r.firstName} {r.lastName}</td>
-                  <td className="py-2 pr-3 opacity-80">{r.email}</td>
-                  <td className="py-2 pr-3 opacity-80">{r.company || '—'}</td>
-                  <td className="py-2 pr-3 opacity-80">{r.phone || '—'}</td>
-                  <td className="py-2 pr-3 opacity-80">{r.team ?? '—'}</td>
+                <tr
+                  key={i}
+                  style={{
+                    background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.025)',
+                  }}
+                >
+                  <td style={leadCell()} className="font-semibold">
+                    {r.firstName} {r.lastName}
+                  </td>
+                  <td style={leadCell(0.85)}>
+                    <a
+                      href={`mailto:${r.email}`}
+                      className="hover:underline"
+                      style={{ color: 'var(--gold)' }}
+                    >
+                      {r.email}
+                    </a>
+                  </td>
+                  <td style={leadCell(0.85)}>{r.company || '—'}</td>
+                  <td style={leadCell(0.85)}>{r.phone || '—'}</td>
+                  <td style={leadCell()}>
+                    <TeamChip
+                      team={r.team}
+                      team1Name={team1Name}
+                      team2Name={team2Name}
+                    />
+                  </td>
+                  <td
+                    style={{ ...leadCell(0.7), whiteSpace: 'nowrap' }}
+                    title={
+                      r.submittedAt ? new Date(r.submittedAt).toLocaleString() : ''
+                    }
+                  >
+                    {relativeTime(r.submittedAt)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -376,6 +422,58 @@ function LeadsSection() {
       )}
     </Panel>
   )
+}
+
+function leadCell(opacity = 1) {
+  return {
+    padding: '10px 12px',
+    borderTop: '1px solid rgba(255,255,255,0.04)',
+    opacity,
+  } as const
+}
+
+function TeamChip({
+  team,
+  team1Name,
+  team2Name,
+}: {
+  team?: 1 | 2 | null
+  team1Name: string
+  team2Name: string
+}) {
+  if (team !== 1 && team !== 2) {
+    return <span className="opacity-40">—</span>
+  }
+  const accent = team === 1 ? '#60a5fa' : 'var(--aep-red)'
+  const bg = team === 1 ? 'rgba(96,165,250,0.15)' : 'rgba(200,16,46,0.15)'
+  return (
+    <span
+      className="inline-block font-bungee tracking-widest uppercase rounded-full"
+      style={{
+        padding: '2px 10px',
+        fontSize: 10,
+        color: accent,
+        background: bg,
+        border: `1px solid ${accent}`,
+      }}
+    >
+      {team === 1 ? team1Name : team2Name}
+    </span>
+  )
+}
+
+function relativeTime(ts?: number | null): string {
+  if (!ts) return '—'
+  const diff = Date.now() - ts
+  const sec = Math.floor(diff / 1000)
+  if (sec < 60) return 'just now'
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min} min ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr} hr ago`
+  const day = Math.floor(hr / 24)
+  if (day < 30) return `${day} day${day === 1 ? '' : 's'} ago`
+  return new Date(ts).toLocaleDateString()
 }
 
 function SaveStatus({
