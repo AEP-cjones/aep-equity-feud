@@ -99,8 +99,8 @@ function TitleScreen({ config }: { config: { team1Name: string; team2Name: strin
           className="owl-idle object-contain"
           style={{ width: 480, height: 380, filter: 'drop-shadow(0 0 60px rgba(255,200,50,0.5)) drop-shadow(0 0 100px rgba(172,34,40,0.4))' }}
         />
-        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow mt-2">EQUITY FAMILY FEUD</h1>
-        <p className="font-bungee text-xl tracking-widest text-white/30 tagline-pulse my-8">SURVEY SAYS...</p>
+        <h1 className="font-bungee text-8xl text-[var(--gold)] title-glow mt-16">EQUITY FAMILY FEUD</h1>
+        <p className="font-bungee text-xl tracking-widest text-white/30 tagline-pulse mb-8">SURVEY SAYS...</p>
         <div className="flex gap-10 text-5xl font-bungee items-center">
           <span className="text-blue-400 team-glow-blue">{config.team1Name}</span>
           <span className="text-white/30 text-4xl">VS</span>
