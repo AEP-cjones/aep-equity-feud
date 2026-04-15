@@ -20,9 +20,45 @@ export default function Admin() {
     return (
       <div className="min-h-screen flex flex-col">
         <AepHeader />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="bg-[var(--navy-light)] rounded-xl p-8 w-80">
-            <h2 className="font-bungee text-xl text-[var(--gold)] mb-4 text-center">Admin Login</h2>
+        <div className="flex-1 flex items-center justify-center title-bg px-4">
+          <div
+            className="relative rounded-2xl p-8 w-[380px] max-w-full"
+            style={{
+              background:
+                'linear-gradient(180deg, var(--navy-light) 0%, var(--navy-mid) 100%)',
+              border: '2px solid var(--gold)',
+              boxShadow:
+                '0 0 0 6px rgba(255,215,0,0.08), 0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)',
+            }}
+          >
+            <img
+              src="/Game_Show_Owl.webp"
+              alt=""
+              className="owl-idle mx-auto block"
+              style={{
+                width: 96,
+                height: 96,
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.5))',
+                marginTop: -64,
+                marginBottom: 8,
+              }}
+            />
+            <p className="text-center text-[10px] tracking-[0.3em] uppercase opacity-60 mb-1">
+              Survey Says…
+            </p>
+            <h2
+              className="font-bungee text-2xl text-center mb-6"
+              style={{
+                color: 'var(--gold)',
+                textShadow: '0 0 20px rgba(255,215,0,0.35)',
+              }}
+            >
+              Admin Access
+            </h2>
+            <label className="text-[10px] tracking-[0.22em] uppercase opacity-60 mb-1 block">
+              Password
+            </label>
             <input
               type="password"
               value={password}
@@ -30,15 +66,27 @@ export default function Admin() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') tryLogin()
               }}
-              placeholder="Password"
-              className="w-full bg-[var(--navy-mid)] rounded-lg px-4 py-3 text-white border border-transparent focus:border-[var(--gold)] outline-none mb-3"
+              placeholder="••••••••"
+              autoFocus
+              className="w-full bg-[var(--navy)] rounded-lg px-4 py-3 text-white text-center tracking-[0.3em] border-2 border-transparent focus:border-[var(--gold)] outline-none mb-4 transition-all"
+              style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.5)' }}
             />
             <button
               onClick={tryLogin}
-              className="w-full py-3 bg-[var(--gold)] text-[var(--navy)] rounded-lg font-bungee hover:bg-[var(--gold-dark)]"
+              className="w-full py-3 rounded-lg font-bungee text-lg tracking-widest transition-all hover:brightness-110 active:scale-[0.98]"
+              style={{
+                background:
+                  'linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%)',
+                color: 'var(--navy)',
+                boxShadow:
+                  '0 4px 14px rgba(255,215,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4)',
+              }}
             >
               Enter
             </button>
+            <p className="text-center text-[10px] opacity-40 mt-4 tracking-widest uppercase">
+              Equity Family Feud
+            </p>
           </div>
         </div>
       </div>
