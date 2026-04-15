@@ -36,6 +36,11 @@ export default function Host() {
       <AepHeader />
       <Scoreboard gameState={gameState} config={config} />
       <div className="p-4 max-w-3xl mx-auto w-full space-y-4">
+        {/* Steal banner — lifted to the top so the host can't miss the one-shot decision */}
+        {gameState.status === 'steal' && (
+          <StealResolution gameState={gameState} config={config} />
+        )}
+
         {/* Team Names */}
         <TeamNameEditor config={config} />
 
@@ -122,9 +127,6 @@ export default function Host() {
               onAdd={(n) => updateGameState({ team2Score: gameState.team2Score + n })}
             />
           </div>
-
-          {/* Steal Resolution — only shown when a team has struck out */}
-          {gameState.status === 'steal' && <StealResolution gameState={gameState} config={config} />}
 
           {/* Award Round Points */}
           {gameState.roundPoints > 0 && (
@@ -338,19 +340,31 @@ function ScoreboardTeamCard({
 }
 
 function StrikeDots({ strikes }: { strikes: number }) {
+  // When strikes===2, the next empty dot pulses to warn "one more ends it".
+  // When strikes===3, all three dots glow harder.
+  const isMax = strikes >= 3
   return (
     <div className="flex items-center gap-1.5">
       {[0, 1, 2].map((i) => {
         const hit = i < strikes
+        const isWarning = !hit && strikes === 2 && i === 2
         return (
           <span
             key={i}
-            className="font-bungee text-lg leading-none w-6 h-6 flex items-center justify-center rounded"
+            className={`font-bungee text-lg leading-none w-6 h-6 flex items-center justify-center rounded ${
+              isWarning ? 'strike-dot-warn' : ''
+            }`}
             style={{
               color: hit ? 'var(--strike-red)' : 'rgba(255,255,255,0.18)',
-              background: hit ? 'rgba(255,23,68,0.15)' : 'rgba(255,255,255,0.04)',
+              background: hit ? 'rgba(255,23,68,0.18)' : 'rgba(255,255,255,0.04)',
               border: `1px solid ${hit ? 'var(--strike-red)' : 'rgba(255,255,255,0.1)'}`,
-              textShadow: hit ? '0 0 8px rgba(255,23,68,0.8)' : 'none',
+              textShadow: hit
+                ? isMax
+                  ? '0 0 14px rgba(255,23,68,1), 0 0 6px rgba(255,23,68,0.8)'
+                  : '0 0 8px rgba(255,23,68,0.8)'
+                : 'none',
+              boxShadow:
+                hit && isMax ? '0 0 18px rgba(255,23,68,0.5)' : 'none',
             }}
           >
             ✕
@@ -431,16 +445,35 @@ function StealResolution({
   const pts = gameState.roundPoints
 
   return (
-    <div className="bg-[var(--navy-light)] rounded-xl p-4 border-2 border-[var(--strike-red)]/60 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="font-bungee text-lg text-[var(--strike-red)]">⚡ Steal Phase</h3>
-        <span className="text-xs opacity-70">{strikingName} struck out • {stealingName} steals</span>
+    <div
+      className="rounded-xl steal-pulse steal-entrance"
+      style={{
+        background:
+          'linear-gradient(180deg, rgba(255,23,68,0.18) 0%, rgba(20,8,12,0.95) 100%)',
+        padding: 16,
+      }}
+    >
+      <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+        <h3
+          className="font-bungee tracking-widest uppercase flex items-center"
+          style={{ color: 'var(--strike-red)', fontSize: 18, gap: 8 }}
+        >
+          <span style={{ fontSize: 22 }}>⚡</span> Steal Phase
+        </h3>
+        <span
+          className="font-bungee tracking-[0.18em] uppercase"
+          style={{ fontSize: 11, opacity: 0.8 }}
+        >
+          {strikingName} struck out · {stealingName} steals
+        </span>
       </div>
-      <p className="text-sm opacity-80">
-        {stealingName} gets <strong>one</strong> guess. If they pick any remaining correct answer,
-        they win the {pts} round points. If they miss, {strikingName} keeps them.
+      <p className="text-sm" style={{ opacity: 0.85, marginBottom: 12 }}>
+        {stealingName} gets <strong style={{ color: 'var(--gold)' }}>one</strong> guess. If
+        they pick any remaining correct answer, they win the{' '}
+        <strong style={{ color: 'var(--gold)' }}>{pts}</strong> round points. If they miss,{' '}
+        {strikingName} keeps them.
       </p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2" style={{ gap: 12 }}>
         <button
           onClick={async () => {
             const award = stealingTeam === 1 ? 'team1Score' : 'team2Score'
@@ -452,9 +485,22 @@ function StealResolution({
               stealFailedAt: null,
             } as Partial<GameState>)
           }}
-          className="py-3 bg-green-700 hover:bg-green-600 rounded-lg font-bungee"
+          className="rounded-xl font-bungee tracking-widest uppercase transition-all hover:brightness-110 active:scale-[0.98]"
+          style={{
+            padding: '14px 12px',
+            fontSize: 14,
+            background:
+              'linear-gradient(180deg, #16a34a 0%, #15803d 100%)',
+            color: 'white',
+            border: '2px solid #4ade80',
+            boxShadow:
+              '0 4px 14px rgba(74,222,128,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+          }}
         >
-          Steal Successful → {stealingName} (+{pts})
+          ✓ Steal Successful
+          <div className="font-bungee" style={{ fontSize: 11, marginTop: 4, opacity: 0.95 }}>
+            → {stealingName} +{pts}
+          </div>
         </button>
         <button
           onClick={async () => {
@@ -467,9 +513,22 @@ function StealResolution({
               stealFailedAt: Date.now(),
             } as Partial<GameState>)
           }}
-          className="py-3 bg-[var(--strike-red)] hover:brightness-110 rounded-lg font-bungee"
+          className="rounded-xl font-bungee tracking-widest uppercase transition-all hover:brightness-110 active:scale-[0.98]"
+          style={{
+            padding: '14px 12px',
+            fontSize: 14,
+            background:
+              'linear-gradient(180deg, var(--strike-red) 0%, #b00027 100%)',
+            color: 'white',
+            border: '2px solid rgba(255,255,255,0.25)',
+            boxShadow:
+              '0 4px 14px rgba(255,23,68,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
+          }}
         >
-          Steal Failed → {strikingName} (+{pts})
+          ✕ Steal Failed
+          <div className="font-bungee" style={{ fontSize: 11, marginTop: 4, opacity: 0.95 }}>
+            → {strikingName} +{pts}
+          </div>
         </button>
       </div>
     </div>
