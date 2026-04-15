@@ -29,11 +29,11 @@ export default function Board() {
   return (
     <div className="min-h-screen flex flex-col title-bg">
       <AepHeader />
-      <div className="flex-1 flex flex-col px-6 pt-10 pb-6 relative">
+      <div className="flex-1 flex flex-col px-6 pt-16 pb-6 relative">
         <StrikeOverlay strikes={gameState.strikes} />
 
         {/* Question */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-2">
           <h2 className="font-bungee text-4xl text-[var(--gold)] title-glow">
             {currentRound?.question || 'Waiting for round...'}
           </h2>
