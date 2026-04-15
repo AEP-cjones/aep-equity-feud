@@ -36,6 +36,7 @@ export default function Board() {
       <AepHeader />
       <div className="flex-1 flex flex-col px-6 pb-6 relative" style={{ paddingTop: '3rem' }}>
         <StrikeOverlay strikes={gameState.strikes} />
+        <RoundIntroSplash roundId={gameState.currentRound} round={currentRound} />
 
         {/* Question — "SURVEY SAYS..." tagline banner over the question */}
         <div className="text-center" style={{ marginBottom: '2.5rem' }}>
@@ -47,18 +48,28 @@ export default function Board() {
           </h2>
         </div>
 
-        {/* Answer Board — sticks just below the question, not vertically centered */}
+        {/* Answer Board — sticks just below the question, framed as a stage */}
         <div className="flex-1 flex items-start justify-center">
           <div className="w-full max-w-4xl">
-            {currentRound?.answers ? (
-              <div className="grid grid-cols-1 gap-3">
-                {currentRound.answers.map((answer, i) => (
-                  <AnswerCard key={i} answer={answer} index={i} large />
-                ))}
-              </div>
-            ) : (
-              <p className="text-center opacity-50 text-xl">No round loaded</p>
-            )}
+            <div
+              style={{
+                border: '2px solid rgba(255, 215, 0, 0.28)',
+                borderRadius: '1.25rem',
+                padding: '1.5rem',
+                background: 'linear-gradient(180deg, rgba(13,33,55,0.55), rgba(10,22,40,0.75))',
+                boxShadow: 'inset 0 0 40px rgba(255,215,0,0.05), 0 0 30px rgba(0,0,0,0.35)',
+              }}
+            >
+              {currentRound?.answers ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {currentRound.answers.map((answer, i) => (
+                    <AnswerCard key={i} answer={answer} index={i} large />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center opacity-50 text-xl py-8">No round loaded</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -68,7 +79,7 @@ export default function Board() {
         </div>
 
         {/* Scores row — centered band with owl between the two score cards */}
-        <div className="flex items-center justify-center gap-12 self-center">
+        <div className="flex items-center justify-center gap-12 self-center" style={{ marginTop: '2rem' }}>
           <TeamScore
             name={config.team1Name}
             score={gameState.team1Score}
@@ -198,20 +209,80 @@ function TeamScore({
   const accent = side === 'left' ? 'text-blue-400 team-glow-blue' : 'text-[var(--aep-red)] team-glow-red'
   const pop = usePopOnChange(score)
   return (
-    <div
-      className={`shrink-0 basis-[360px] text-center px-6 py-5 rounded-2xl border-2 transition-all ${
-        active
-          ? 'bg-[var(--navy-light)] border-[var(--gold)] scale-105 shadow-[0_0_30px_rgba(255,215,0,0.4)]'
-          : 'bg-[var(--navy-light)]/60 border-white/10 opacity-80'
-      }`}
+    <div className="shrink-0 basis-[360px] relative">
+      {active && (
+        <p
+          className="absolute left-0 right-0 text-center font-bungee tracking-widest text-[var(--gold)] turn-pointer pointer-events-none"
+          style={{ top: '-1.6rem', fontSize: '0.75rem', letterSpacing: '0.25em' }}
+        >
+          THEIR TURN ▼
+        </p>
+      )}
+      <div
+        className={`text-center px-6 py-5 rounded-2xl border-2 transition-all ${
+          active
+            ? 'bg-[var(--navy-light)] border-[var(--gold)] scale-105 shadow-[0_0_40px_rgba(255,215,0,0.55)]'
+            : 'bg-[var(--navy-light)]/60 border-white/10 opacity-80'
+        }`}
+      >
+        <p className={`font-bungee text-2xl mb-2 truncate ${accent}`}>{name}</p>
+        <p className={`font-bungee text-6xl text-[var(--gold)] title-glow ${pop ? 'score-pop' : ''}`}>
+          {score}
+        </p>
+        <p className="text-xs opacity-60 tracking-widest uppercase mt-2">
+          👥 {audienceCount} {audienceCount === 1 ? 'fan' : 'fans'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Briefly overlays a "ROUND X" splash + question reveal when the current
+ * round changes. Does NOT fire on initial mount (useRef seeds with the
+ * first roundId seen), only on subsequent transitions — so a page reload
+ * mid-game doesn't re-show the splash.
+ */
+function RoundIntroSplash({
+  roundId,
+  round,
+}: {
+  roundId: string
+  round: { question: string } | undefined
+}) {
+  const [show, setShow] = useState(false)
+  const [label, setLabel] = useState('')
+  const [question, setQuestion] = useState('')
+  const prev = useRef(roundId)
+
+  useEffect(() => {
+    if (roundId === prev.current) return
+    prev.current = roundId
+    if (!roundId) {
+      setShow(false)
+      return
+    }
+    const num = /round(\d+)/i.exec(roundId)?.[1]
+    setLabel(num ? `ROUND ${num}` : roundId.toUpperCase())
+    setQuestion(round?.question || '')
+    setShow(true)
+    const t = setTimeout(() => setShow(false), 1800)
+    return () => clearTimeout(t)
+  }, [roundId, round?.question])
+
+  if (!show) return null
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-5 splash-fade"
+      style={{ background: 'rgba(10, 22, 40, 0.82)', backdropFilter: 'blur(6px)' }}
     >
-      <p className={`font-bungee text-2xl mb-2 truncate ${accent}`}>{name}</p>
-      <p className={`font-bungee text-6xl text-[var(--gold)] title-glow ${pop ? 'score-pop' : ''}`}>
-        {score}
-      </p>
-      <p className="text-xs opacity-60 tracking-widest uppercase mt-2">
-        👥 {audienceCount} {audienceCount === 1 ? 'fan' : 'fans'}
-      </p>
+      <p className="font-bungee text-lg tracking-widest text-white/50 splash-sub">NEXT UP</p>
+      <h1 className="font-bungee text-7xl text-[var(--gold)] title-glow splash-scale">{label}</h1>
+      {question && (
+        <p className="font-bungee text-2xl text-white max-w-3xl text-center px-8 splash-sub">
+          {question}
+        </p>
+      )}
     </div>
   )
 }
