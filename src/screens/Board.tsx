@@ -37,16 +37,27 @@ export default function Board() {
       <div className="flex-1 flex flex-col px-6 pb-6 relative" style={{ paddingTop: '3rem' }}>
         <StrikeOverlay strikes={gameState.strikes} />
         <RoundIntroSplash roundId={gameState.currentRound} round={currentRound} />
+        <StealFailedOverlay
+          stealFailedAt={gameState.stealFailedAt ?? null}
+          originalTeamName={gameState.activeTeam === 1 ? config.team1Name : config.team2Name}
+        />
 
-        {/* Question — "SURVEY SAYS..." tagline banner over the question */}
-        <div className="text-center" style={{ marginBottom: '2.5rem' }}>
-          <p className="font-bungee text-sm tracking-widest text-white/30 tagline-pulse" style={{ marginBottom: '0.5rem' }}>
-            SURVEY SAYS…
-          </p>
-          <h2 className="font-bungee text-4xl text-[var(--gold)] title-glow">
-            {currentRound?.question || 'Waiting for round...'}
-          </h2>
-        </div>
+        {/* Steal phase banner OR normal question header */}
+        {gameState.status === 'steal' ? (
+          <StealBanner
+            stealingTeamName={gameState.activeTeam === 1 ? config.team2Name : config.team1Name}
+            stealingSide={gameState.activeTeam === 1 ? 'right' : 'left'}
+          />
+        ) : (
+          <div className="text-center" style={{ marginBottom: '2.5rem' }}>
+            <p className="font-bungee text-sm tracking-widest text-white/30 tagline-pulse" style={{ marginBottom: '0.5rem' }}>
+              SURVEY SAYS…
+            </p>
+            <h2 className="font-bungee text-4xl text-[var(--gold)] title-glow">
+              {currentRound?.question || 'Waiting for round...'}
+            </h2>
+          </div>
+        )}
 
         {/* Answer Board — 2-column layout in a marquee-light stage */}
         <div className="flex items-start justify-center">
@@ -87,12 +98,18 @@ export default function Board() {
           <RoundPointsPill value={gameState.roundPoints} />
         </div>
 
-        {/* Scores row — centered band with owl between the two score cards */}
+        {/* Scores row — centered band with owl between the two score cards.
+            During the steal phase the "THEIR TURN" pointer follows the
+            stealing team (not the one that struck out). */}
         <div className="flex items-center justify-center gap-12 self-center" style={{ marginTop: '2rem' }}>
           <TeamScore
             name={config.team1Name}
             score={gameState.team1Score}
-            active={gameState.activeTeam === 1}
+            active={
+              gameState.status === 'steal'
+                ? gameState.activeTeam !== 1
+                : gameState.activeTeam === 1
+            }
             audienceCount={audienceCounts.team1}
             side="left"
           />
@@ -107,7 +124,11 @@ export default function Board() {
           <TeamScore
             name={config.team2Name}
             score={gameState.team2Score}
-            active={gameState.activeTeam === 2}
+            active={
+              gameState.status === 'steal'
+                ? gameState.activeTeam !== 2
+                : gameState.activeTeam === 2
+            }
             audienceCount={audienceCounts.team2}
             side="right"
           />
@@ -247,69 +268,215 @@ function TeamScore({
 }
 
 /**
- * Vegas-marquee chase lights wrapped around the answer board. Bulbs sit
- * just outside the inner stage border. Each bulb has a staggered animation
- * delay so the highlight runs around the perimeter clockwise.
+ * Banner shown above the answer board during the steal phase.
+ * Takes the place of the "SURVEY SAYS / question" block.
  */
-function MarqueeFrame({ children }: { children: React.ReactNode }) {
-  const HORIZ = 16
-  const VERT = 7
-  const total = HORIZ * 2 + VERT * 2
-  const delayFor = (i: number) => `${(i / total) * 2}s` // 2s loop
+function StealBanner({
+  stealingTeamName,
+  stealingSide,
+}: {
+  stealingTeamName: string
+  stealingSide: 'left' | 'right'
+}) {
+  const accent = stealingSide === 'left' ? 'text-blue-400 team-glow-blue' : 'text-[var(--aep-red)] team-glow-red'
+  return (
+    <div className="text-center" style={{ marginBottom: '2.5rem' }}>
+      <p className="font-bungee text-sm tracking-widest text-white/40 tagline-pulse" style={{ marginBottom: '0.5rem' }}>
+        ⚡ STEAL ⚡
+      </p>
+      <h2 className="font-bungee text-4xl title-glow">
+        <span className={accent}>{stealingTeamName}</span>
+        <span className="text-[var(--gold)]"> — One Guess to Steal It</span>
+      </h2>
+    </div>
+  )
+}
 
-  // Build position arrays going clockwise: top-left → top-right → right-top → right-bottom →
-  // bottom-right → bottom-left → left-bottom → left-top.
-  const bulbs: Array<{ key: string; style: React.CSSProperties; idx: number }> = []
-  let idx = 0
+/**
+ * Full-screen overlay that fires briefly when `stealFailedAt` is set
+ * within the last ~3 seconds. Reuses the existing strike-X animation
+ * plus a "STEAL FAILED" banner and the original team name.
+ *
+ * The timestamp-based trigger means any late state read from Firebase
+ * naturally self-expires — no cleanup needed on the Host side.
+ */
+function StealFailedOverlay({
+  stealFailedAt,
+  originalTeamName,
+}: {
+  stealFailedAt: number | null
+  originalTeamName: string
+}) {
+  const DURATION_MS = 2800
+  const [show, setShow] = useState(false)
 
-  // Top edge
-  for (let i = 0; i < HORIZ; i++) {
-    bulbs.push({
-      key: `t${i}`,
-      idx,
-      style: { left: `${((i + 0.5) * 100) / HORIZ}%`, top: '-6px' },
-    })
-    idx++
-  }
-  // Right edge
-  for (let i = 0; i < VERT; i++) {
-    bulbs.push({
-      key: `r${i}`,
-      idx,
-      style: { top: `${((i + 0.5) * 100) / VERT}%`, right: '-6px' },
-    })
-    idx++
-  }
-  // Bottom edge (reversed for clockwise flow)
-  for (let i = HORIZ - 1; i >= 0; i--) {
-    bulbs.push({
-      key: `b${i}`,
-      idx,
-      style: { left: `${((i + 0.5) * 100) / HORIZ}%`, bottom: '-6px' },
-    })
-    idx++
-  }
-  // Left edge (reversed for clockwise flow)
-  for (let i = VERT - 1; i >= 0; i--) {
-    bulbs.push({
-      key: `l${i}`,
-      idx,
-      style: { top: `${((i + 0.5) * 100) / VERT}%`, left: '-6px' },
-    })
-    idx++
-  }
+  useEffect(() => {
+    if (!stealFailedAt) {
+      setShow(false)
+      return
+    }
+    const age = Date.now() - stealFailedAt
+    if (age >= DURATION_MS) {
+      setShow(false)
+      return
+    }
+    setShow(true)
+    const t = setTimeout(() => setShow(false), DURATION_MS - age)
+    return () => clearTimeout(t)
+  }, [stealFailedAt])
+
+  if (!show) return null
 
   return (
-    <div className="relative">
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 splash-fade pointer-events-none"
+      style={{ background: 'rgba(10, 22, 40, 0.78)', backdropFilter: 'blur(4px)' }}
+    >
+      <div className="screen-shake flex gap-8">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="strike-x text-[160px] font-bungee text-[var(--strike-red)] leading-none"
+            style={{
+              textShadow: '0 0 40px rgba(255, 23, 68, 0.8), 0 0 80px rgba(255, 23, 68, 0.4)',
+              animationDelay: `${i * 0.08}s`,
+            }}
+          >
+            X
+          </div>
+        ))}
+      </div>
+      <h1 className="font-bungee text-6xl text-[var(--strike-red)] splash-scale"
+        style={{ textShadow: '0 0 30px rgba(255,23,68,0.6)' }}
+      >
+        STEAL FAILED
+      </h1>
+      <p className="font-bungee text-2xl text-white splash-sub">
+        Points to <span className="text-[var(--gold)]">{originalTeamName}</span>
+      </p>
+    </div>
+  )
+}
+
+/**
+ * Vegas-marquee chase lights wrapped around the answer board. Two concentric
+ * rings of gold bulbs sit just outside the inner stage border. Each bulb is
+ * placed so its center sits the requested `offset` pixels outside the edge
+ * (NOT using translate(-50%) which would pull the right/bottom bulbs inside
+ * the container). The two rings use different phase offsets and slightly
+ * different loop durations so the chase drifts and layers.
+ */
+function MarqueeFrame({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null)
+
+  useEffect(() => {
+    if (!ref.current) return
+    const el = ref.current
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      setDims({ w: r.width, h: r.height })
+    }
+    measure()
+    const obs = new ResizeObserver(measure)
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      {dims && (
+        <>
+          {/* Inner ring — closer to stage, bigger bulbs, ~54px spacing */}
+          <MarqueeRing dims={dims} offset={12} spacingPx={54} size={10} loopSeconds={2} />
+          {/* Outer ring — further out, smaller bulbs, ~58px spacing, slightly
+              different loop length so the chase drifts against the inner ring. */}
+          <MarqueeRing dims={dims} offset={28} spacingPx={58} size={7} loopSeconds={2.4} />
+        </>
+      )}
+      {children}
+    </div>
+  )
+}
+
+/**
+ * A single ring of chase bulbs around the perimeter. `offset` pushes the
+ * bulb centers that many pixels outside the container edge. `phase` shifts
+ * each bulb along its edge by that fraction of one slot (0 = slot-centered,
+ * 0.5 = half a slot, landing between the inner ring's bulbs).
+ */
+/**
+ * Places bulbs at uniform arc-length intervals around the expanded rectangle
+ * (stage + offset in each direction). Corners are naturally covered because
+ * the perimeter is treated as a single continuous loop. Spacing is
+ * near-uniform regardless of stage aspect ratio.
+ */
+function MarqueeRing({
+  dims,
+  offset,
+  spacingPx,
+  size,
+  loopSeconds,
+}: {
+  dims: { w: number; h: number }
+  offset: number
+  spacingPx: number
+  size: number
+  loopSeconds: number
+}) {
+  const half = size / 2
+  // Expand the rectangle outward by `offset` so bulbs sit outside the stage
+  // border. The bulb path traces this expanded rectangle's perimeter.
+  const W = dims.w + 2 * offset
+  const H = dims.h + 2 * offset
+  const perimeter = 2 * (W + H)
+  const n = Math.max(4, Math.round(perimeter / spacingPx))
+  const step = perimeter / n
+
+  // Convert an arc-length position d (0..perimeter) clockwise from TL into
+  // (left, top) coordinates for the bulb center, measured from the stage
+  // container's top-left corner. Negative values mean outside the stage.
+  const project = (d: number): { left: number; top: number } => {
+    if (d < W) return { left: -offset + d, top: -offset }
+    d -= W
+    if (d < H) return { left: dims.w + offset, top: -offset + d }
+    d -= H
+    if (d < W) return { left: dims.w + offset - d, top: dims.h + offset }
+    d -= W
+    return { left: -offset, top: dims.h + offset - d }
+  }
+
+  const bulbs = Array.from({ length: n }, (_, i) => {
+    const { left, top } = project(i * step)
+    return {
+      key: i,
+      idx: i,
+      style: {
+        width: size,
+        height: size,
+        position: 'absolute' as const,
+        borderRadius: '50%',
+        pointerEvents: 'none' as const,
+        left: left - half,
+        top: top - half,
+      },
+    }
+  })
+
+  return (
+    <>
       {bulbs.map((b) => (
         <span
           key={b.key}
           className="marquee-bulb"
-          style={{ ...b.style, animationDelay: delayFor(b.idx) }}
+          style={{
+            ...b.style,
+            animation: `bulbChase ${loopSeconds}s ease-in-out infinite`,
+            animationDelay: `${(b.idx / n) * loopSeconds}s`,
+          }}
         />
       ))}
-      {children}
-    </div>
+    </>
   )
 }
 

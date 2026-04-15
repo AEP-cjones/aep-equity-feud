@@ -196,16 +196,10 @@ body {
   animation: taglinePulse 3s ease-in-out infinite;
 }
 
-/* Marquee bulbs (Vegas-style chase lights around the answer board) */
+/* Marquee bulbs (Vegas-style chase lights around the answer board).
+   Position + size are set inline by MarqueeRing; this only styles the look. */
 .marquee-bulb {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
   background: var(--gold);
-  transform: translate(-50%, -50%);
-  animation: bulbChase 2s ease-in-out infinite;
-  pointer-events: none;
   z-index: 1;
 }
 

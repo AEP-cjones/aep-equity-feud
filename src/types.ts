@@ -27,6 +27,9 @@ export interface GameState {
   team2Score: number
   roundPoints: number
   activeTeam: 1 | 2
+  /** Set to Date.now() by the host when a steal fails. Clients show a
+   *  "STEAL FAILED" overlay while (Date.now() - stealFailedAt) < 3000ms. */
+  stealFailedAt?: number | null
 }
 
 export const DEFAULT_CONFIG: GameConfig = {

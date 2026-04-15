@@ -152,6 +152,9 @@ export default function Host() {
             />
           </div>
 
+          {/* Steal Resolution — only shown when a team has struck out */}
+          {gameState.status === 'steal' && <StealResolution gameState={gameState} config={config} />}
+
           {/* Award Round Points */}
           {gameState.roundPoints > 0 && (
             <div className="flex gap-2">
@@ -302,6 +305,65 @@ function TeamNameEditor({ config }: { config: { team1Name: string; team2Name: st
           onBlur={() => updateConfig({ team2Name: t2 })}
           className="w-full bg-[var(--navy-mid)] rounded-lg px-3 py-2 text-white border border-transparent focus:border-[var(--gold)] outline-none"
         />
+      </div>
+    </div>
+  )
+}
+
+function StealResolution({
+  gameState,
+  config,
+}: {
+  gameState: GameState
+  config: { team1Name: string; team2Name: string }
+}) {
+  const strikingTeam = gameState.activeTeam
+  const stealingTeam: 1 | 2 = strikingTeam === 1 ? 2 : 1
+  const strikingName = strikingTeam === 1 ? config.team1Name : config.team2Name
+  const stealingName = stealingTeam === 1 ? config.team1Name : config.team2Name
+  const pts = gameState.roundPoints
+
+  return (
+    <div className="bg-[var(--navy-light)] rounded-xl p-4 border-2 border-[var(--strike-red)]/60 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bungee text-lg text-[var(--strike-red)]">⚡ Steal Phase</h3>
+        <span className="text-xs opacity-70">{strikingName} struck out • {stealingName} steals</span>
+      </div>
+      <p className="text-sm opacity-80">
+        {stealingName} gets <strong>one</strong> guess. If they pick any remaining correct answer,
+        they win the {pts} round points. If they miss, {strikingName} keeps them.
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={async () => {
+            const award = stealingTeam === 1 ? 'team1Score' : 'team2Score'
+            await updateGameState({
+              [award]: (stealingTeam === 1 ? gameState.team1Score : gameState.team2Score) + pts,
+              roundPoints: 0,
+              strikes: 0,
+              status: 'playing',
+              stealFailedAt: null,
+            } as Partial<GameState>)
+          }}
+          className="py-3 bg-green-700 hover:bg-green-600 rounded-lg font-bungee"
+        >
+          Steal Successful → {stealingName} (+{pts})
+        </button>
+        <button
+          onClick={async () => {
+            const award = strikingTeam === 1 ? 'team1Score' : 'team2Score'
+            await updateGameState({
+              [award]: (strikingTeam === 1 ? gameState.team1Score : gameState.team2Score) + pts,
+              roundPoints: 0,
+              strikes: 0,
+              status: 'playing',
+              stealFailedAt: Date.now(),
+            } as Partial<GameState>)
+          }}
+          className="py-3 bg-[var(--strike-red)] hover:brightness-110 rounded-lg font-bungee"
+        >
+          Steal Failed → {strikingName} (+{pts})
+        </button>
       </div>
     </div>
   )
