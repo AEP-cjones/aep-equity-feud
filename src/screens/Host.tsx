@@ -12,6 +12,7 @@ import {
   resetAudience,
 } from '../hooks/useFirebase'
 import AepHeader from '../components/AepHeader'
+import Panel from '../components/Panel'
 import type { GameState, Round, AudiencePlayers, AudienceAnswer } from '../types'
 
 export default function Host() {
@@ -43,9 +44,8 @@ export default function Host() {
         <TeamNameEditor config={config} />
 
         {/* Round Selector */}
-        <div className="bg-[var(--navy-light)] rounded-xl p-4">
-          <h3 className="font-bungee text-lg mb-3">Round Select</h3>
-          <div className="flex flex-wrap gap-2 mb-3">
+        <Panel title="Round Select">
+          <div className="flex flex-wrap gap-2">
             {roundKeys.map((key) => (
               <button
                 key={key}
@@ -63,7 +63,7 @@ export default function Host() {
           {roundKeys.length === 0 && (
             <p className="opacity-50">No rounds created. Go to /admin to add rounds.</p>
           )}
-        </div>
+        </Panel>
 
         {/* Audience */}
         <AudiencePanel
@@ -74,10 +74,10 @@ export default function Host() {
 
         {/* Current Round Answers */}
         {currentRound && (
-          <div className="bg-[var(--navy-light)] rounded-xl p-4">
-            <h3 className="font-bungee text-lg mb-1 text-[var(--gold)]">
+          <Panel title="Reveal Answers">
+            <h4 className="font-bungee text-lg mb-1 text-[var(--gold)]">
               {currentRound.question}
-            </h3>
+            </h4>
             <p className="text-sm opacity-50 mb-3">Tap an answer to reveal it on the board</p>
             <div className="space-y-2">
               {currentRound.answers.map((answer, i) => (
@@ -98,13 +98,11 @@ export default function Host() {
                 </button>
               ))}
             </div>
-          </div>
+          </Panel>
         )}
 
         {/* Game Controls */}
-        <div className="bg-[var(--navy-light)] rounded-xl p-4 space-y-3">
-          <h3 className="font-bungee text-lg">Controls</h3>
-
+        <Panel title="Controls" bodyClassName="space-y-3">
           {/* Strike Button */}
           <button
             onClick={() => handleStrike(gameState)}
@@ -204,7 +202,7 @@ export default function Host() {
               Reset Game
             </button>
           </div>
-        </div>
+        </Panel>
       </div>
     </div>
   )
@@ -260,7 +258,10 @@ function StatusBar({
   config: { team1Name: string; team2Name: string }
 }) {
   return (
-    <div className="bg-[var(--navy-light)] rounded-xl p-3 flex items-center justify-between text-sm">
+    <div
+      className="bg-[var(--navy-light)] rounded-xl p-3 flex items-center justify-between text-sm"
+      style={{ borderTop: '2px solid var(--gold)' }}
+    >
       <span>
         Status: <strong className="text-[var(--gold)]">{gameState.status.toUpperCase()}</strong>
       </span>
@@ -287,7 +288,7 @@ function TeamNameEditor({ config }: { config: { team1Name: string; team2Name: st
   }, [config.team1Name, config.team2Name])
 
   return (
-    <div className="bg-[var(--navy-light)] rounded-xl p-4 flex gap-3">
+    <Panel title="Team Names" bodyClassName="flex gap-3">
       <div className="flex-1">
         <label className="text-xs opacity-50">Team 1 Name</label>
         <input
@@ -306,7 +307,7 @@ function TeamNameEditor({ config }: { config: { team1Name: string; team2Name: st
           className="w-full bg-[var(--navy-mid)] rounded-lg px-3 py-2 text-white border border-transparent focus:border-[var(--gold)] outline-none"
         />
       </div>
-    </div>
+    </Panel>
   )
 }
 
@@ -387,9 +388,9 @@ function AudiencePanel({
   const totalPlayers = teamCounts.team1 + teamCounts.team2
 
   return (
-    <div className="bg-[var(--navy-light)] rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="font-bungee text-lg">Audience ({totalPlayers})</h3>
+    <Panel
+      title={`Audience (${totalPlayers})`}
+      action={
         <button
           onClick={async () => {
             if (confirm('Reset the audience? This clears all players, answers, and leads.')) {
@@ -400,8 +401,9 @@ function AudiencePanel({
         >
           Reset audience
         </button>
-      </div>
-
+      }
+      bodyClassName="space-y-3"
+    >
       {/* Per-team counts */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-[var(--navy-mid)] rounded-lg p-3 text-center border border-blue-400/30">
@@ -433,7 +435,7 @@ function AudiencePanel({
       ) : (
         <p className="text-xs opacity-50 text-center">Select a round to see audience answers.</p>
       )}
-    </div>
+    </Panel>
   )
 }
 

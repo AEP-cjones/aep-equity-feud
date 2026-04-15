@@ -6,6 +6,7 @@ import {
 import { dbRef, remove } from '../firebase'
 import { downloadCsv } from '../utils/csv'
 import AepHeader from '../components/AepHeader'
+import Panel from '../components/Panel'
 import type { Round, Answer } from '../types'
 
 export default function Admin() {
@@ -111,9 +112,9 @@ function LeadsSection() {
   const count = rows.length
 
   return (
-    <div className="bg-[var(--navy-light)] rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="font-bungee text-lg text-[var(--gold)]">Leads ({count})</h2>
+    <Panel
+      title={`Leads (${count})`}
+      action={
         <div className="flex gap-2">
           <button
             onClick={() => {
@@ -146,8 +147,9 @@ function LeadsSection() {
             Clear
           </button>
         </div>
-      </div>
-
+      }
+      bodyClassName="space-y-3"
+    >
       {count === 0 ? (
         <p className="text-sm opacity-50 text-center py-4">No leads collected yet.</p>
       ) : (
@@ -176,7 +178,7 @@ function LeadsSection() {
           </table>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }
 
@@ -240,7 +242,13 @@ function RoundEditor({
   }
 
   return (
-    <div className="bg-[var(--navy-light)] rounded-xl overflow-hidden">
+    <div
+      className="bg-[var(--navy-light)] rounded-xl overflow-hidden"
+      style={{
+        borderTop: '2px solid var(--gold)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 0 rgba(0,0,0,0.2)',
+      }}
+    >
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between p-4 hover:bg-[var(--navy-mid)]/30 transition-colors"
