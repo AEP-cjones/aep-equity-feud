@@ -321,7 +321,18 @@ function Scoreboard({
         boxShadow: '0 6px 18px rgba(0,0,0,0.45)',
       }}
     >
-      <div className="max-w-5xl mx-auto px-4 py-2 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+      <div
+        style={{
+          maxWidth: 1200,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          padding: '12px 24px',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          gap: 24,
+        }}
+      >
         <ScoreboardTeamCard
           name={config.team1Name}
           score={gameState.team1Score}
@@ -329,12 +340,35 @@ function Scoreboard({
           active={gameState.activeTeam === 1}
         />
 
-        <div className="flex flex-col items-center gap-1.5 min-w-[180px]">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] tracking-[0.22em] uppercase opacity-60">Round</span>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 8,
+            minWidth: 200,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
-              className="font-bungee text-sm px-2 py-0.5 rounded"
-              style={{ background: 'var(--navy-mid)', color: 'var(--gold)' }}
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                opacity: 0.6,
+              }}
+            >
+              Round
+            </span>
+            <span
+              className="font-bungee"
+              style={{
+                fontSize: 14,
+                padding: '2px 10px',
+                borderRadius: 4,
+                background: 'var(--navy-mid)',
+                color: 'var(--gold)',
+              }}
             >
               {gameState.currentRound || '—'}
             </span>
@@ -342,11 +376,21 @@ function Scoreboard({
           </div>
           <StrikeDots strikes={gameState.strikes} />
           {gameState.roundPoints > 0 && (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="opacity-60 tracking-widest uppercase">Round Points</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
               <span
-                className="font-bungee px-2 py-0.5 rounded"
                 style={{
+                  opacity: 0.6,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Round Points
+              </span>
+              <span
+                className="font-bungee"
+                style={{
+                  padding: '2px 10px',
+                  borderRadius: 4,
                   background: 'var(--gold)',
                   color: 'var(--navy)',
                   boxShadow: '0 0 10px rgba(255,215,0,0.45)',
@@ -386,32 +430,66 @@ function ScoreboardTeamCard({
   const accentColor = accent === 'blue' ? '#60a5fa' : 'var(--aep-red)'
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl px-3 py-2 transition-all ${
-        alignRight ? 'flex-row-reverse text-right' : ''
-      }`}
+      className="rounded-xl transition-all"
       style={{
-        background: active
-          ? 'rgba(255,215,0,0.08)'
-          : 'rgba(26,45,74,0.6)',
+        display: 'flex',
+        flexDirection: alignRight ? 'row-reverse' : 'row',
+        alignItems: 'center',
+        gap: 14,
+        padding: '8px 16px',
+        textAlign: alignRight ? 'right' : 'left',
+        background: active ? 'rgba(255,215,0,0.08)' : 'rgba(26,45,74,0.6)',
         boxShadow: active
           ? `inset 0 0 0 2px var(--gold), 0 0 18px rgba(255,215,0,0.25)`
           : `inset 0 0 0 1px ${accent === 'blue' ? 'rgba(96,165,250,0.3)' : 'rgba(200,16,46,0.3)'}`,
       }}
     >
-      <div className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'} min-w-0`}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: alignRight ? 'flex-end' : 'flex-start',
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
         <span
-          className="font-bungee text-xs tracking-[0.14em] uppercase truncate max-w-[180px]"
-          style={{ color: accentColor }}
+          className="font-bungee"
+          style={{
+            color: accentColor,
+            fontSize: 14,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: '100%',
+          }}
         >
           {name}
         </span>
-        <span className="text-[10px] opacity-50 tracking-[0.22em] uppercase">
-          {active ? 'Their Turn' : '\u00A0'}
+        <span
+          style={{
+            fontSize: 10,
+            opacity: active ? 0.85 : 0.4,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: active ? 'var(--gold)' : 'inherit',
+            marginTop: 2,
+          }}
+        >
+          {active ? '★ Their Turn' : '\u00A0'}
         </span>
       </div>
       <span
-        className="font-bungee text-4xl leading-none tabular-nums"
-        style={{ color: 'var(--gold)', textShadow: '0 2px 10px rgba(255,215,0,0.35)' }}
+        className="font-bungee tabular-nums"
+        style={{
+          color: 'var(--gold)',
+          fontSize: 38,
+          lineHeight: 1,
+          textShadow: '0 2px 10px rgba(255,215,0,0.4)',
+          flexShrink: 0,
+        }}
       >
         {score}
       </span>
@@ -710,7 +788,7 @@ function AudienceCountCard({
       </p>
       <p
         className="font-bungee tabular-nums"
-        style={{ fontSize: 32, lineHeight: 1.1, color: accent, marginTop: 4 }}
+        style={{ fontSize: 44, lineHeight: 1.1, color: accent, marginTop: 6 }}
       >
         {count}
       </p>
@@ -1008,14 +1086,14 @@ function TeamControlCard({
         </div>
       </button>
 
-      <div style={{ padding: '14px 12px 12px 12px', textAlign: 'center' }}>
+      <div style={{ padding: '20px 14px 16px 14px', textAlign: 'center' }}>
         <p
           className="font-bungee tabular-nums"
           style={{
-            fontSize: 44,
+            fontSize: 64,
             lineHeight: 1,
             color: 'var(--gold)',
-            textShadow: '0 2px 10px rgba(255,215,0,0.35)',
+            textShadow: '0 4px 18px rgba(255,215,0,0.45)',
           }}
         >
           {score}
@@ -1024,8 +1102,8 @@ function TeamControlCard({
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: 6,
-            marginTop: 12,
+            gap: 8,
+            marginTop: 18,
           }}
         >
           <StepperButton sign="-" onClick={() => onAdd(-10)}>−10</StepperButton>
@@ -1056,8 +1134,8 @@ function StepperButton({
       }}
       className="rounded-md font-bungee transition-all active:scale-95 hover:brightness-125"
       style={{
-        padding: '8px 10px',
-        fontSize: 14,
+        padding: '12px 10px',
+        fontSize: 16,
         letterSpacing: '0.05em',
         background: isPlus ? 'rgba(22,101,52,0.55)' : 'rgba(127,29,29,0.55)',
         border: `1px solid ${isPlus ? 'rgba(74,222,128,0.45)' : 'rgba(248,113,113,0.45)'}`,
