@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import {
   useConfig, useRounds, saveRound, deleteRound, createRound,
-  useLeads,
+  useLeads, markLeadSynced,
 } from '../hooks/useFirebase'
 import { dbRef, remove } from '../firebase'
 import { downloadCsv } from '../utils/csv'
+import { pushLeadToZoho } from '../services/zoho'
 import AepHeader from '../components/AepHeader'
 import Panel from '../components/Panel'
-import type { Round, Answer } from '../types'
+import type { Round, Answer, Lead } from '../types'
 
 export default function Admin() {
   const config = useConfig()
@@ -306,19 +307,103 @@ function LeadsSection() {
   const leads = useLeads()
   const config = useConfig()
   const rows = leads
-    ? Object.values(leads).sort(
-        (a, b) => parseTs(b.submittedAt) - parseTs(a.submittedAt),
-      )
+    ? Object.entries(leads)
+        .map(([playerId, lead]) => ({ playerId, ...lead }))
+        .sort((a, b) => parseTs(b.submittedAt) - parseTs(a.submittedAt))
     : []
   const count = rows.length
   const team1Name = config?.team1Name || 'Team 1'
   const team2Name = config?.team2Name || 'Team 2'
 
+  // Sync-eligible: opted in AND not already synced
+  const eligible = rows.filter((r) => r.optIn === true && !r.zohoLeadId)
+  const eligibleCount = eligible.length
+
+  const [syncStatus, setSyncStatus] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+
+  const handleSyncToZoho = async () => {
+    if (syncing || eligibleCount === 0) return
+    setSyncing(true)
+    let success = 0
+    let failed = 0
+    for (let i = 0; i < eligible.length; i++) {
+      const r = eligible[i]
+      setSyncStatus(`Syncing ${i + 1} of ${eligibleCount}…`)
+      try {
+        const lead: Lead = {
+          firstName: r.firstName,
+          lastName: r.lastName,
+          email: r.email,
+          company: r.company,
+          phone: r.phone,
+          team: r.team,
+          optIn: r.optIn,
+          submittedAt: r.submittedAt,
+        }
+        const { zohoLeadId } = await pushLeadToZoho(lead, { team1Name, team2Name })
+        await markLeadSynced(r.playerId, zohoLeadId)
+        success++
+      } catch (err) {
+        console.error(`[sync] Failed for ${r.email}:`, err)
+        failed++
+      }
+    }
+    setSyncStatus(
+      failed === 0
+        ? `✓ Synced ${success} of ${eligibleCount}`
+        : `✗ Synced ${success} of ${eligibleCount} — ${failed} failed (see console)`,
+    )
+    setSyncing(false)
+    // Clear the status message after 6 seconds on success
+    if (failed === 0) {
+      setTimeout(() => setSyncStatus(null), 6000)
+    }
+  }
+
   return (
     <Panel
       title={`Leads (${count})`}
       action={
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
+          {syncStatus && (
+            <span
+              className="text-xs tracking-widest uppercase px-3 py-1.5 rounded-full"
+              style={{
+                background: syncStatus.startsWith('✗')
+                  ? 'rgba(200,16,46,0.15)'
+                  : syncStatus.startsWith('✓')
+                    ? 'rgba(74,222,128,0.12)'
+                    : 'rgba(255,215,0,0.1)',
+                color: syncStatus.startsWith('✗')
+                  ? 'var(--aep-red)'
+                  : syncStatus.startsWith('✓')
+                    ? '#4ade80'
+                    : 'var(--gold)',
+                border: `1px solid ${
+                  syncStatus.startsWith('✗')
+                    ? 'rgba(200,16,46,0.4)'
+                    : syncStatus.startsWith('✓')
+                      ? 'rgba(74,222,128,0.35)'
+                      : 'rgba(255,215,0,0.3)'
+                }`,
+              }}
+            >
+              {syncStatus}
+            </span>
+          )}
+          <button
+            onClick={handleSyncToZoho}
+            disabled={eligibleCount === 0 || syncing}
+            title={
+              eligibleCount === 0
+                ? 'No opted-in, un-synced leads to push'
+                : `Push ${eligibleCount} opted-in lead${eligibleCount === 1 ? '' : 's'} to Zoho CRM`
+            }
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-500 disabled:opacity-30 text-sm"
+          >
+            Sync to Zoho ({eligibleCount})
+          </button>
           <button
             onClick={() => {
               downloadCsv(
@@ -330,6 +415,8 @@ function LeadsSection() {
                   company: r.company || '',
                   phone: r.phone || '',
                   team: r.team ?? '',
+                  optIn: r.optIn ? 'yes' : 'no',
+                  zohoLeadId: r.zohoLeadId || '',
                   submittedAt: r.submittedAt,
                 })),
               )
@@ -360,7 +447,7 @@ function LeadsSection() {
           <table className="w-full text-sm border-separate" style={{ borderSpacing: 0 }}>
             <thead>
               <tr>
-                {['Name', 'Email', 'Company', 'Phone', 'Team', 'Submitted'].map((h) => (
+                {['Name', 'Email', 'Company', 'Phone', 'Team', 'Opt-in', 'Synced', 'Submitted'].map((h) => (
                   <th
                     key={h}
                     className="text-left font-bungee tracking-[0.16em] uppercase"
@@ -407,6 +494,41 @@ function LeadsSection() {
                       team1Name={team1Name}
                       team2Name={team2Name}
                     />
+                  </td>
+                  <td style={leadCell(0.85)}>
+                    {r.optIn ? (
+                      <span
+                        className="inline-block text-[10px] tracking-widest uppercase rounded-full"
+                        style={{
+                          padding: '2px 8px',
+                          color: '#4ade80',
+                          background: 'rgba(74,222,128,0.12)',
+                          border: '1px solid rgba(74,222,128,0.35)',
+                        }}
+                      >
+                        Yes
+                      </span>
+                    ) : (
+                      <span className="opacity-40">—</span>
+                    )}
+                  </td>
+                  <td style={leadCell(0.85)}>
+                    {r.zohoLeadId ? (
+                      <span
+                        className="inline-block text-[10px] tracking-widest uppercase rounded-full"
+                        style={{
+                          padding: '2px 8px',
+                          color: '#4ade80',
+                          background: 'rgba(74,222,128,0.12)',
+                          border: '1px solid rgba(74,222,128,0.35)',
+                        }}
+                        title={r.zohoSyncedAt ? `Synced ${new Date(r.zohoSyncedAt).toLocaleString()} (Zoho ID ${r.zohoLeadId})` : ''}
+                      >
+                        ✓ Synced
+                      </span>
+                    ) : (
+                      <span className="opacity-40">—</span>
+                    )}
                   </td>
                   <td
                     style={{ ...leadCell(0.7), whiteSpace: 'nowrap' }}

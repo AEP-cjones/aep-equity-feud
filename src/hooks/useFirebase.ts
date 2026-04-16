@@ -176,6 +176,14 @@ export async function submitLead(playerId: string, lead: Omit<Lead, 'submittedAt
   } satisfies Lead)
 }
 
+/** Write Zoho sync markers back to the lead record after a successful sync. */
+export async function markLeadSynced(playerId: string, zohoLeadId: string) {
+  await update(dbRef(`leads/${playerId}`), {
+    zohoLeadId,
+    zohoSyncedAt: new Date().toISOString(),
+  })
+}
+
 export async function resetAudience() {
   await remove(dbRef('players'))
   await remove(dbRef('audienceAnswers'))

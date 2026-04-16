@@ -254,6 +254,7 @@ function LeadScreen({ playerId, team }: { playerId: string; team: 1 | 2 }) {
     email: '',
     company: '',
     phone: '',
+    optIn: false,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -296,6 +297,17 @@ function LeadScreen({ playerId, team }: { playerId: string; team: 1 | 2 }) {
           <Field label="Email *" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
           <Field label="Company" value={form.company} onChange={(v) => setForm({ ...form, company: v })} />
           <Field label="Phone" type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+          <label className="flex items-start gap-3 mt-2 text-sm opacity-80 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 w-5 h-5 flex-shrink-0 accent-[var(--gold)]"
+              checked={form.optIn}
+              onChange={(e) => setForm({ ...form, optIn: e.target.checked })}
+            />
+            <span>
+              Yes, I'd like to receive information about Accelerated Equity Plans solutions.
+            </span>
+          </label>
           <button
             type="submit"
             disabled={!form.firstName.trim() || !form.email.trim() || busy}

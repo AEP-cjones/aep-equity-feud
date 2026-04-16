@@ -67,7 +67,14 @@ export interface Lead {
   company?: string
   phone?: string
   team?: 1 | 2
+  /** Marketing-consent flag captured at form submit. Required true for Zoho sync.
+   *  Existing pre-2026-04-16 leads lack this field — treated as false. */
+  optIn?: boolean
   submittedAt: string
+  /** Set when the lead has been synced to Zoho CRM. Enables dedup on repeat
+   *  admin button clicks. */
+  zohoLeadId?: string
+  zohoSyncedAt?: string
 }
 
 export interface AudiencePlayers {
