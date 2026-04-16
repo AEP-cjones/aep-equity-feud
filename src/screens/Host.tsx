@@ -36,8 +36,8 @@ export default function Host() {
       <AepHeader />
       <Scoreboard gameState={gameState} config={config} />
       <div
-        className="mx-auto w-full"
-        style={{ padding: '20px 24px', maxWidth: 1200 }}
+        className="w-full"
+        style={{ padding: '20px 24px' }}
       >
         {/* Steal banner stays full-width, above the grid, when active */}
         {gameState.status === 'steal' && (
@@ -323,9 +323,6 @@ function Scoreboard({
     >
       <div
         style={{
-          maxWidth: 1200,
-          marginLeft: 'auto',
-          marginRight: 'auto',
           padding: '12px 24px',
           display: 'grid',
           gridTemplateColumns: '1fr auto 1fr',
