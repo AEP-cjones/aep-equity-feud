@@ -3,7 +3,7 @@ import {
   useConfig, useRounds, saveRound, deleteRound, createRound,
   useLeads, markLeadSynced,
 } from '../hooks/useFirebase'
-import { dbRef, remove } from '../firebase'
+import { dbRef, remove, signInAsGameAdmin } from '../firebase'
 import { downloadCsv } from '../utils/csv'
 import { pushLeadToZoho } from '../services/zoho'
 import AepHeader from '../components/AepHeader'
@@ -16,6 +16,8 @@ export default function Admin() {
   const leads = useLeads()
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const [loggingIn, setLoggingIn] = useState(false)
   const [editingRound, setEditingRound] = useState<string | null>(null)
   const [tab, setTab] = useState<'rounds' | 'leads'>('rounds')
 
@@ -67,16 +69,18 @@ export default function Admin() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') tryLogin()
+                if (e.key === 'Enter' && !loggingIn) tryLogin()
               }}
               placeholder="••••••••"
               autoFocus
-              className="w-full bg-[var(--navy)] rounded-lg px-4 py-3 text-white text-center tracking-[0.3em] border-2 border-transparent focus:border-[var(--gold)] outline-none mb-4 transition-all"
+              disabled={loggingIn}
+              className="w-full bg-[var(--navy)] rounded-lg px-4 py-3 text-white text-center tracking-[0.3em] border-2 border-transparent focus:border-[var(--gold)] outline-none mb-4 transition-all disabled:opacity-60"
               style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.5)' }}
             />
             <button
               onClick={tryLogin}
-              className="w-full py-3 rounded-lg font-bungee text-lg tracking-widest transition-all hover:brightness-110 active:scale-[0.98]"
+              disabled={loggingIn}
+              className="w-full py-3 rounded-lg font-bungee text-lg tracking-widest transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
                 background:
                   'linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%)',
@@ -85,8 +89,13 @@ export default function Admin() {
                   '0 4px 14px rgba(255,215,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4)',
               }}
             >
-              Enter
+              {loggingIn ? 'Verifying…' : 'Enter'}
             </button>
+            {loginError && (
+              <p className="text-center text-sm mt-3" style={{ color: '#ff6b6b' }}>
+                {loginError}
+              </p>
+            )}
             <p className="text-center text-[10px] opacity-40 mt-4 tracking-widest uppercase">
               Equity Family Feud
             </p>
@@ -96,11 +105,20 @@ export default function Admin() {
     )
   }
 
-  function tryLogin() {
-    if (password === (config?.adminPassword || 'aep2026')) {
+  async function tryLogin() {
+    if (loggingIn) return
+    setLoginError(null)
+    setLoggingIn(true)
+    try {
+      // Server-validated password — exchanges for a Firebase custom token
+      // with `gameAdmin: true` claim. After this resolves, the rules let
+      // us read leads + write rounds/config.
+      await signInAsGameAdmin(password)
       setAuthed(true)
-    } else {
-      alert('Wrong password')
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoggingIn(false)
     }
   }
 
