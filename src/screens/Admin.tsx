@@ -11,7 +11,6 @@ import Panel from '../components/Panel'
 import type { Round, Answer, Lead } from '../types'
 
 export default function Admin() {
-  const config = useConfig()
   const rounds = useRounds()
   const leads = useLeads()
   const [authed, setAuthed] = useState(false)
